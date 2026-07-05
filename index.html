@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HS — Song Library</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Courier New', monospace;
+    background: #f4f4f2;
+    color: #111;
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  .top-nav {
+    background: #111;
+    color: #fff;
+    padding: 14px 32px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .nav-brand {
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 3px;
+  }
+  .nav-sub {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #888;
+  }
+
+  /* MAIN */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  .section-header {
+    font-size: 8px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #999;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+    margin-bottom: 24px;
+  }
+
+  /* SONG GRID */
+  .song-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .song-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 20px;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .song-card:hover {
+    border-color: #111;
+    box-shadow: 3px 3px 0 #111;
+  }
+
+  .card-title {
+    font-size: 17px;
+    font-weight: bold;
+    letter-spacing: 0.3px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+  }
+
+  .card-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .card-meta-item {}
+  .card-meta-lbl {
+    font-size: 7px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 2px;
+  }
+  .card-meta-val {
+    font-size: 12px;
+    font-weight: bold;
+    color: #111;
+  }
+
+  .card-footer {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 10px;
+  }
+  .card-tuning {
+    font-size: 8px;
+    color: #aaa;
+    letter-spacing: 0.5px;
+    font-style: italic;
+  }
+  .card-version {
+    font-size: 7px;
+    background: #f0f0f0;
+    color: #888;
+    padding: 2px 6px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
+  .card-arrow {
+    margin-top: 16px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #bbb;
+    text-transform: uppercase;
+    text-align: right;
+  }
+  .song-card:hover .card-arrow { color: #111; }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <span class="nav-brand">HS</span>
+  <span class="nav-sub">Song Library</span>
+</nav>
+
+<main class="main">
+  <div class="section-header">Songs</div>
+  <div class="song-grid">
+
+    <a class="song-card" href="buddy.html">
+      <div class="card-title">Buddy</div>
+      <div class="card-meta">
+        <div class="card-meta-item">
+          <div class="card-meta-lbl">Key</div>
+          <div class="card-meta-val">G</div>
+        </div>
+        <div class="card-meta-item">
+          <div class="card-meta-lbl">BPM</div>
+          <div class="card-meta-val">~140</div>
+        </div>
+        <div class="card-meta-item">
+          <div class="card-meta-lbl">Time</div>
+          <div class="card-meta-val">4/4</div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="card-tuning">Eb standard</span>
+        <span class="card-version">v1</span>
+      </div>
+      <div class="card-arrow">View sheet →</div>
+    </a>
+
+    <a class="song-card" href="mandibles.html">
+      <div class="card-title">Mandibles</div>
+      <div class="card-meta">
+        <div class="card-meta-item">
+          <div class="card-meta-lbl">Key</div>
+          <div class="card-meta-val">D</div>
+        </div>
+        <div class="card-meta-item">
+          <div class="card-meta-lbl">BPM</div>
+          <div class="card-meta-val">116</div>
+        </div>
+        <div class="card-meta-item">
+          <div class="card-meta-lbl">Time</div>
+          <div class="card-meta-val">6/8</div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="card-tuning">Eb standard</span>
+        <span class="card-version">v1</span>
+      </div>
+      <div class="card-arrow">View sheet →</div>
+    </a>
+
+    <a class="song-card" href="take-my-tea.html">
+      <div class="card-title">Take My Tea</div>
+      <div class="card-meta">
+        <div class="card-meta-item">
+          <div class="card-meta-lbl">Key</div>
+          <div class="card-meta-val">Fm</div>
+        </div>
+        <div class="card-meta-item">
+          <div class="card-meta-lbl">BPM</div>
+          <div class="card-meta-val">—</div>
+        </div>
+        <div class="card-meta-item">
+          <div class="card-meta-lbl">Time</div>
+          <div class="card-meta-val">4/4</div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="card-tuning">Eb standard</span>
+        <span class="card-version">v1</span>
+      </div>
+      <div class="card-arrow">View sheet →</div>
+    </a>
+
+  </div>
+</main>
+
+</body>
+</html>

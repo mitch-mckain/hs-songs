@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Take My Tea — Song Sheet</title>
+<style>
+  @page { size: letter portrait; margin: 0.45in; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; }
+  body {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: #111;
+    background: #fff;
+    max-width: 7.6in;
+    margin: 0 auto;
+    padding: 0.2in 0;
+    min-height: 10.1in;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 2px solid #111;
+    padding-bottom: 5px;
+    margin-bottom: 7px;
+    gap: 10px;
+  }
+  .title-block { flex: 1; }
+  .title-lbl { font-size: 7px; letter-spacing: 2px; text-transform: uppercase; color: #999; margin-bottom: 2px; }
+  .song-title { font-size: 21px; font-weight: bold; letter-spacing: 0.5px; border-bottom: 1px solid #bbb; padding-bottom: 1px; }
+  .meta-row { display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0; }
+  .meta-item { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .meta-lbl { font-size: 7px; letter-spacing: 1px; text-transform: uppercase; color: #777; white-space: nowrap; }
+  .meta-val {
+    border-bottom: 1.5px solid #111;
+    height: 17px;
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 1px;
+  }
+  .w-s { min-width: 30px; }
+  .w-m { min-width: 42px; }
+  .w-l { min-width: 64px; }
+  .tuning-note {
+    font-size: 7px;
+    color: #888;
+    font-style: italic;
+    text-align: right;
+    margin-top: 2px;
+    letter-spacing: 0.3px;
+  }
+
+  /* SECTION LABEL */
+  .sec-lbl {
+    font-size: 7px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #666;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 3px;
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+
+  /* CHORD PALETTE */
+  .chord-palette { display: flex; gap: 10px; flex-wrap: nowrap; }
+  .chord-box { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .chord-name-line {
+    font-size: 9px;
+    font-weight: bold;
+    text-align: center;
+    width: 48px;
+    border-bottom: 1px solid #bbb;
+    height: 14px;
+    line-height: 14px;
+    font-family: Arial, sans-serif;
+    color: #111;
+  }
+
+  /* SONG MAP */
+  .song-map { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .song-map th {
+    font-size: 7px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #666;
+    border-top: 1px solid #bbb;
+    border-bottom: 1.5px solid #111;
+    padding: 3px 5px;
+    text-align: left;
+    font-weight: normal;
+    background: #f5f5f5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .song-map td {
+    border-bottom: 1px dashed #ccc;
+    padding: 0;
+    vertical-align: middle;
+    height: 26px;
+  }
+  .song-map tr:last-child td { border-bottom: 1.5px solid #111; }
+  .col-sec  { width: 96px; text-align: center; }
+  .col-bars { width: 34px; }
+  .col-prog { width: 37%; }
+  .col-note { }
+
+  .tag {
+    display: block;
+    text-align: center;
+    font-size: 7.5px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    border: 1px solid;
+    border-radius: 2px;
+    padding: 3px 4px;
+    margin: 0 5px;
+    line-height: 1;
+    white-space: nowrap;
+    font-family: Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .tag.dk { background: #111; color: #fff; border-color: #111; }
+  .tag.lt { background: #fff; color: #555; border-color: #bbb; }
+  .tag.gy { background: #eee; color: #555; border-color: #ccc; }
+
+  .prog { padding: 0 5px; font-size: 9.5px; color: #222; }
+  .prog.dim { color: #999; font-style: italic; }
+  .lyric { padding: 0 5px; font-size: 8.5px; color: #555; font-style: italic; }
+
+  /* BOTTOM */
+  .bottom-row {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    min-height: 0;
+    align-items: stretch;
+  }
+  .bottom-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+  .bottom-right {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .tab-staff {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5px;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    padding: 8px 10px;
+    background: #fafafa;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    height: 112px;
+    width: 100%;
+  }
+  .tab-string {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .tab-string-name {
+    width: 8px;
+    flex-shrink: 0;
+    color: #444;
+  }
+  .tab-string-line {
+    flex: 1;
+    border-bottom: 1px solid #aaa;
+    height: 50%;
+  }
+  .notes-area {
+    flex: 1;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    padding: 10px 10px;
+    overflow: hidden;
+    background-image: repeating-linear-gradient(
+      to bottom, #fafafa, #fafafa 17px,
+      #ddd 17px, #ddd 18px
+    );
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+
+  @media print {
+    body { max-width: none; padding: 0; margin: 0; }
+  }
+
+  /* SITE NAV */
+  .site-nav {
+    background: #111;
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: -0.2in 0 16px 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .site-nav a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .site-nav a:hover { opacity: 1; }
+  .site-nav .nav-brand { font-size: 13px; font-weight: bold; letter-spacing: 3px; opacity: 1; }
+  @media print { .site-nav { display: none; } }
+
+  /* AUDIO PLAYER */
+  .audio-section { margin-bottom: 12px; }
+  .audio-player-wrap {
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .audio-player-wrap iframe { width: 100%; height: 50px; border: none; display: block; }
+  .audio-placeholder {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: #bbb;
+    text-transform: uppercase;
+  }
+  @media print { .audio-section { display: none; } }
+
+  /* ─── SCREEN OVERRIDES ─── */
+  @media screen {
+    body {
+      font-size: 14px;
+      padding: 0 0 40px 0;
+      min-height: unset;
+      background: #f7f7f5;
+      max-width: 100%;
+    }
+    .header {
+      padding: 20px 20px 10px;
+      margin-bottom: 0;
+      background: #fff;
+      border-bottom: 2px solid #111;
+    }
+    .tuning-note {
+      padding: 4px 20px 0;
+      background: #fff;
+    }
+    .sec-lbl {
+      margin-top: 0;
+      padding: 12px 20px 6px;
+      background: #f7f7f5;
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    .chord-palette {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px 20px 14px;
+      background: #fff;
+      gap: 14px;
+    }
+    .song-map-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+    }
+    .song-map { margin-top: 0; }
+    .song-map td { height: 40px; }
+    .lyric { font-size: 12px; }
+    .prog { font-size: 12px; }
+    .bottom-section, .riff-image-block {
+      padding: 0 20px;
+      background: #fff;
+      margin-top: 16px;
+    }
+    .riff-img { border-radius: 3px; }
+  }
+
+  /* ─── MOBILE (≤640px) ─── */
+  @media screen and (max-width: 640px) {
+    body { font-size: 13px; }
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .song-title { font-size: 24px; }
+    .meta-row { flex-wrap: wrap; gap: 8px; }
+    .meta-val { font-size: 13px; height: 20px; }
+    .col-prog { width: auto; }
+    .tag { font-size: 7px; }
+    .prog { font-size: 11px; }
+    .lyric { font-size: 11px; }
+    .audio-section { margin: 0 20px 0; }
+  }
+
+  /* LYRICS */
+  .lyrics-outer {
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    background: #fff;
+    overflow: hidden;
+  }
+  @media screen {
+    .lyrics-outer { margin: 0 0px; }
+  }
+  .lyrics-content {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.8;
+    color: #222;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 14px 16px;
+    margin: 0;
+  }
+  @media screen {
+    .lyrics-content { font-size: 14px; }
+  }
+  @media print { .lyrics-section { margin-top: 12px; } }
+</style>
+</head>
+<body>
+<!-- SITE NAV -->
+<nav class="site-nav">
+  <a href="index.html">← Library</a>
+  <span class="nav-brand">HS</span>
+</nav>
+
+
+<!-- AUDIO -->
+<div class="audio-section">
+  <div class="audio-player-wrap">
+    <div class="audio-placeholder">Audio — add Google Drive file ID</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="title-block">
+    <div class="title-lbl">Song Title</div>
+    <div class="song-title">Take My Tea</div>
+  </div>
+  <div class="meta-row">
+    <div class="meta-item">
+      <div class="meta-lbl">Key</div>
+      <div class="meta-val w-s">Fm</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-lbl">BPM ≈</div>
+      <div class="meta-val w-s">~115</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-lbl">Time</div>
+      <div class="meta-val w-s">4/4</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-lbl">Capo</div>
+      <div class="meta-val w-s">—</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-lbl">Tuning</div>
+      <div class="meta-val w-l">Eb std</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-lbl">Version</div>
+      <div class="meta-val w-s">v1</div>
+    </div>
+  </div>
+</div>
+
+<div class="tuning-note">played in E&#x266D; standard tuning — chord names notated in E standard</div>
+
+<!-- CHORD SHAPES -->
+<div class="sec-lbl">Chord Shapes</div>
+<div class="chord-palette" id="chord-palette"></div>
+
+<!-- SONG STRUCTURE -->
+<div class="sec-lbl">Song Structure</div>
+<div class="song-map-wrap"><table class="song-map">
+  <thead>
+    <tr>
+      <th class="col-sec">Section</th>
+      <th class="col-bars">Bars</th>
+      <th class="col-prog">Chords / Progression</th>
+      <th class="col-note">Opening Lyric</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="tag lt">INTRO</span></td>
+      <td style="text-align:center; font-size:9px; color:#555;">×4</td>
+      <td><span class="prog">Ab5 → F5 → C5 → Db5</span></td>
+      <td><span class="lyric">na na na na…</span></td>
+    </tr>
+    <tr>
+      <td><span class="tag dk">CHORUS</span></td>
+      <td style="text-align:center; font-size:9px; color:#555;">×4</td>
+      <td><span class="prog">Ab5 → C5 → F5 → Bb5</span></td>
+      <td><span class="lyric">I am a rental…</span></td>
+    </tr>
+    <tr>
+      <td><span class="tag lt">VERSE</span></td>
+      <td></td>
+      <td><span class="prog dim">(= Intro)</span></td>
+      <td><span class="lyric">I've been living…</span></td>
+    </tr>
+    <tr>
+      <td><span class="tag dk">CHORUS</span></td>
+      <td></td>
+      <td><span class="prog dim">(repeat)</span></td>
+      <td><span class="lyric">I am a rental…</span></td>
+    </tr>
+    <tr>
+      <td><span class="tag lt">VERSE 2</span></td>
+      <td></td>
+      <td><span class="prog dim">(= Chorus)</span></td>
+      <td><span class="lyric">If it's alright with you…</span></td>
+    </tr>
+    <tr>
+      <td><span class="tag dk">CHORUS</span></td>
+      <td></td>
+      <td><span class="prog dim">(repeat)</span></td>
+      <td><span class="lyric">I am a rental…</span></td>
+    </tr>
+    <tr>
+      <td><span class="tag lt">BRIDGE pt.1</span></td>
+      <td style="text-align:center; font-size:9px; color:#555;">×4</td>
+      <td><span class="prog">Db/Ab → C/G → Ab5 → F5</span></td>
+      <td><span class="lyric">Was overzealous…</span></td>
+    </tr>
+    <tr>
+      <td><span class="tag gy">BRIDGE pt.2</span></td>
+      <td style="text-align:center; font-size:9px; color:#555;">×4</td>
+      <td><span class="prog">F5 → Ab5 → Dbmaj7 → Ab/C</span></td>
+      <td><span class="lyric">I read your messages…</span></td>
+    </tr>
+    <tr>
+      <td><span class="tag dk">OUTRO CHORUS</span></td>
+      <td style="text-align:center; font-size:9px; color:#555;">×2</td>
+      <td><span class="prog dim">(repeat)</span></td>
+      <td><span class="lyric">I am an asshole…</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- LYRICS -->
+<div class="lyrics-section">
+  <div class="sec-lbl">Lyrics</div>
+  <div class="lyrics-outer">
+    <pre id="lyrics-content" class="lyrics-content">Loading…</pre>
+  </div>
+</div>
+
+</div>
+
+
+<script>
+(function () {
+  /* ── Chord diagram renderer ── */
+  const W = 48, H = 62;
+  const PL = 15, PR = 5, PT = 17, PB = 4;
+  const S = 6, F = 4;
+  const gw = W - PL - PR;   // 33
+  const gh = H - PT - PB;   // 39
+  const ss = gw / (S - 1);  // 6.6
+  const fs = gh / F;         // 9.75
+  const DR = Math.min(fs * 0.37, 3.4);
+
+  function n(v) { return v.toFixed(1); }
+
+  function makeSVG(frets, sf) {
+    let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // Nut
+    if (sf === 1) {
+      s += `<rect x="${PL}" y="${PT - 1.5}" width="${gw}" height="2.5" fill="#111" rx="0.3"/>`;
+    } else {
+      s += `<line x1="${PL}" y1="${PT}" x2="${PL + gw}" y2="${PT}" stroke="#aaa" stroke-width="0.7"/>`;
+      s += `<text x="${PL - 5}" y="${n(PT + 5)}" font-size="5.5" text-anchor="end" font-family="Arial,sans-serif" fill="#444">${sf}fr</text>`;
+    }
+
+    // Fret lines
+    for (let f = 1; f <= F; f++) {
+      const y = n(PT + f * fs);
+      s += `<line x1="${PL}" y1="${y}" x2="${PL + gw}" y2="${y}" stroke="#ccc" stroke-width="0.6"/>`;
+    }
+
+    // String lines
+    for (let i = 0; i < S; i++) {
+      const x = n(PL + i * ss);
+      s += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${n(PT + gh)}" stroke="#aaa" stroke-width="${i === 0 ? 1.1 : 0.7}"/>`;
+    }
+
+    // Markers
+    if (frets) {
+      for (let i = 0; i < S; i++) {
+        const x = PL + i * ss;
+        const fret = frets[i];
+        if (fret === -1) {
+          s += `<text x="${n(x)}" y="${n(PT - 2.5)}" font-size="7" text-anchor="middle" font-family="Arial,sans-serif" fill="#666">×</text>`;
+        } else if (fret === 0) {
+          s += `<circle cx="${n(x)}" cy="${n(PT - 4.5)}" r="2.5" fill="none" stroke="#444" stroke-width="0.8"/>`;
+        } else {
+          const rel = fret - sf + 1;
+          if (rel >= 1 && rel <= F) {
+            const cy = PT + (rel - 0.5) * fs;
+            s += `<circle cx="${n(x)}" cy="${n(cy)}" r="${DR}" fill="#111"/>`;
+          }
+        }
+      }
+    }
+
+    return s + `</svg>`;
+  }
+
+  /* ── Chord definitions ──
+     frets: [Eb, Ab, Db, Gb, Bb, eb] low→high
+     -1 = muted, 0 = open, n = fret number
+     sf = starting fret (shown as "Nfr" label)          */
+  const CHORDS = [
+    { name: 'Ab5',    frets: [4,6,6,-1,-1,-1],  sf: 4 },
+    { name: 'F5',     frets: [1,3,3,-1,-1,-1],   sf: 1 },
+    { name: 'C5',     frets: [-1,3,5,5,-1,-1],   sf: 3 },
+    { name: 'Db5',    frets: [-1,4,6,6,-1,-1],   sf: 4 },
+    { name: 'Bb5',    frets: [-1,1,3,3,-1,-1],   sf: 1 },
+    { name: 'Db/Ab',  frets: [4,4,6,6,-1,-1],    sf: 4 },
+    { name: 'C/G',    frets: [3,3,5,5,-1,-1],    sf: 3 },
+    { name: 'Dbmaj7', frets: [-1,4,6,5,-1,-1],   sf: 4 },
+    { name: 'Ab/C',   frets: [-1,3,6,5,-1,-1],   sf: 3 },
+  ];
+
+  const container = document.getElementById('chord-palette');
+  CHORDS.forEach(ch => {
+    const box = document.createElement('div');
+    box.className = 'chord-box';
+    box.innerHTML = `<div class="chord-name-line">${ch.name}</div>${makeSVG(ch.frets, ch.sf)}`;
+    container.appendChild(box);
+  });
+
+  // Snap notes area height to a multiple of the line height so no half-lines show
+  window.addEventListener('load', () => {
+    const notes = document.querySelector('.notes-area');
+    const lineH = 18;
+    const h = notes.getBoundingClientRect().height;
+    const rem = h % lineH;
+    if (rem > 0) {
+      notes.style.flex = 'none';
+      notes.style.height = (h - rem) + 'px';
+    }
+  });
+})();
+
+  // ── Lyrics from Google Doc ──
+  // Paste the published URL (File → Share → Publish to web) below
+  const LYRIC_DOC_URL = '';
+
+  async function loadLyrics() {
+    const container = document.getElementById('lyrics-content');
+    if (!container) return;
+    if (!LYRIC_DOC_URL) {
+      container.textContent = 'No lyrics doc connected yet.';
+      return;
+    }
+    container.textContent = 'Loading…';
+    try {
+      const res = await fetch(LYRIC_DOC_URL + '?output=txt');
+      if (!res.ok) throw new Error('fetch failed');
+      const text = await res.text();
+      container.textContent = text.trim();
+    } catch (e) {
+      container.textContent = 'Could not load lyrics. Make sure the doc is published to the web.';
+      container.style.color = '#bbb';
+    }
+  }
+  loadLyrics();
+</script>
+
+</body>
+</html>
