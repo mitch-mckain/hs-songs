@@ -364,9 +364,6 @@
     background: #fff;
     overflow: hidden;
   }
-  @media screen {
-    .lyrics-outer { margin: 0 0px; }
-  }
   .lyrics-content {
     font-family: 'Courier New', monospace;
     font-size: 11px;
@@ -377,19 +374,8 @@
     padding: 14px 16px;
     margin: 0;
   }
-  @media screen {
-    .lyrics-content { font-size: 14px; }
-  }
-  .lyrics-frame {
-    width: 100%;
-    height: 500px;
-    border: none;
-    display: block;
-    background: #fff;
-  }
-  @media screen and (max-width: 640px) { .lyrics-frame { height: 420px; } }
+  @media screen { .lyrics-content { font-size: 14px; } }
   @media print { .lyrics-section { margin-top: 12px; } }
-  @media print { .lyrics-frame { height: 300px; } }
 </style>
 </head>
 <body>
@@ -507,14 +493,6 @@
   </tbody>
 </table></div>
 
-<!-- LYRICS -->
-<div class="lyrics-section">
-  <div class="sec-lbl">Lyrics</div>
-  <div class="lyrics-outer">
-    <iframe class="lyrics-frame" src="https://docs.google.com/document/d/e/2PACX-1vROWTs--qKxgXJJWTyALdESBX9SRKGQ5wbphJXNZ20GFtcAF6PwjeVeplmyKoo2gfyChgVVThmV92Pg/pub?embedded=true" frameborder="0"></iframe>
-  </div>
-</div>
-
 <!-- BOTTOM -->
 <div class="bottom-section">
 
@@ -530,6 +508,16 @@
 
 
 </div>
+
+<!-- LYRICS -->
+<div class="lyrics-section">
+  <div class="sec-lbl">Lyrics</div>
+  <div class="lyrics-outer">
+    <pre id="lyrics-content" class="lyrics-content">Loading…</pre>
+  </div>
+</div>
+
+
   </div>
 </div>
 
@@ -622,6 +610,22 @@
     }
   });
 })();
+
+  // ── Lyrics from Google Doc ──
+  const LYRIC_DOC_URL = 'https://docs.google.com/document/d/e/2PACX-1vROWTs--qKxgXJJWTyALdESBX9SRKGQ5wbphJXNZ20GFtcAF6PwjeVeplmyKoo2gfyChgVVThmV92Pg/pub';
+  async function loadLyrics() {
+    const container = document.getElementById('lyrics-content');
+    if (!container || !LYRIC_DOC_URL) return;
+    try {
+      const res = await fetch(LYRIC_DOC_URL + '?output=txt');
+      if (!res.ok) throw new Error();
+      const text = await res.text();
+      container.textContent = text.trim();
+    } catch (e) {
+      container.innerHTML = 'View lyrics: <a href="' + LYRIC_DOC_URL + '" target="_blank" style="color:#555">open doc →</a>';
+    }
+  }
+  loadLyrics();
 </script>
 
 </body>
