@@ -620,8 +620,10 @@
       const res = await fetch(LYRIC_DOC_URL);
       if (!res.ok) throw new Error();
       const html = await res.text();
-      // Convert block elements to newlines before stripping tags
+      // Remove script/style blocks entirely (content included)
       let text = html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/<\/p>/gi, '\n')
         .replace(/<\/div>/gi, '\n')
