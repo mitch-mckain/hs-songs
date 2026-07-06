@@ -620,11 +620,24 @@
       const res = await fetch(LYRIC_DOC_URL);
       if (!res.ok) throw new Error();
       const html = await res.text();
-      // Parse the HTML and extract readable text
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html;
-      tmp.querySelectorAll('script, style, head').forEach(el => el.remove());
-      const text = (tmp.innerText || tmp.textContent).trim();
+      // Convert block elements to newlines before stripping tags
+      let text = html
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<\/h[1-6]>/gi, '\n')
+        .replace(/<[^>]+>/g, '');
+      // Decode HTML entities
+      const ta = document.createElement('textarea');
+      ta.innerHTML = text;
+      text = ta.value;
+      // Strip Google Docs boilerplate lines
+      const junk = ['Published using Google Docs', 'Report abuse', 'Learn more', 'Updated automatically'];
+      text = text.split('\n')
+        .filter(line => !junk.some(j => line.trim().startsWith(j)))
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
       container.textContent = text;
     } catch (e) {
       container.innerHTML = 'View lyrics: <a href="' + LYRIC_DOC_URL + '" target="_blank" style="color:#555">open doc →</a>';
