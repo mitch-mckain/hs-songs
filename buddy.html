@@ -617,10 +617,15 @@
     const container = document.getElementById('lyrics-content');
     if (!container || !LYRIC_DOC_URL) return;
     try {
-      const res = await fetch(LYRIC_DOC_URL + '?output=txt');
+      const res = await fetch(LYRIC_DOC_URL);
       if (!res.ok) throw new Error();
-      const text = await res.text();
-      container.textContent = text.trim();
+      const html = await res.text();
+      // Parse the HTML and extract readable text
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      tmp.querySelectorAll('script, style, head').forEach(el => el.remove());
+      const text = (tmp.innerText || tmp.textContent).trim();
+      container.textContent = text;
     } catch (e) {
       container.innerHTML = 'View lyrics: <a href="' + LYRIC_DOC_URL + '" target="_blank" style="color:#555">open doc →</a>';
     }
