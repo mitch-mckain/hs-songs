@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-mono: var(--font-mono);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #ffffff;
+  color: #37352f;
+  font-family: -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+::selection {
+  background: #d3e5fc;
+  color: #17181c;
+}
+
+/* AlphaTab cursor styles */
+.at-cursor-bar { background: rgba(23,24,28,0.06); }
+.at-cursor-beat { background: #17181c; width: 2px !important; }
+.at-highlight * { fill: #d34b2c !important; stroke: #d34b2c !important; }
