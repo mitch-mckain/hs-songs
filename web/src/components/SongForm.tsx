@@ -117,6 +117,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
   const [showCustomBuilder, setShowCustomBuilder] = useState(false)
   const [editingChordId, setEditingChordId] = useState<string | null>(null)
   const dragIndexRef = useRef<number | null>(null)
+  const progDragRef = useRef<{ rowId: string; index: number } | null>(null)
 
   // Pre-populate chords from existing song
   const [addedChords, setAddedChords] = useState<AddedChord[]>(() =>
@@ -128,9 +129,10 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
     }))
   )
 
-  // Pre-populate structure rows
-  const [structureRows, setStructureRows] = useState<StructureRow[]>(() =>
-    [...initialStructureRows]
+  // Pre-populate structure rows — migrate legacy name-based progressions to chord IDs
+  const [structureRows, setStructureRows] = useState<StructureRow[]>(() => {
+    const nameToId = new Map(initialChords.map(c => [c.name, c.id]))
+    return [...initialStructureRows]
       .sort((a, b) => a.position - b.position)
       .map(r => ({
         id: r.id,
@@ -138,9 +140,11 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
         section_type: r.section_type,
         bar_count: r.bar_count?.toString() ?? '',
         lyric_snippet: r.lyric_snippet ?? '',
-        chord_progression: r.chord_progression as string[],
+        chord_progression: (r.chord_progression as string[]).map(entry =>
+          entry.startsWith('__') ? entry : (nameToId.get(entry) ?? entry)
+        ),
       }))
-  )
+  })
 
   const [saving, setSaving] = useState(false)
 
@@ -168,7 +172,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
     if (chord) {
       setStructureRows(prev => prev.map(row => ({
         ...row,
-        chord_progression: row.chord_progression.filter(n => n !== chord.name),
+        chord_progression: row.chord_progression.filter(id => id !== chord.id),
       })))
     }
   }
@@ -187,7 +191,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
       id: crypto.randomUUID(),
       section_label: '',
       section_type: 'verse',
-      bar_count: '',
+      bar_count: '2',
       lyric_snippet: '',
       chord_progression: [],
     }])
@@ -197,9 +201,9 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
     setStructureRows(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r))
   }
 
-  function appendChordToRow(rowId: string, chordName: string) {
+  function appendChordToRow(rowId: string, chordId: string) {
     setStructureRows(prev => prev.map(r =>
-      r.id === rowId ? { ...r, chord_progression: [...r.chord_progression, chordName] } : r
+      r.id === rowId ? { ...r, chord_progression: [...r.chord_progression, chordId] } : r
     ))
   }
 
@@ -237,7 +241,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
     try {
       const payload = {
         song: { title, status, album, key, bpm, time_signature: timeSignature, capo, version, tuning, drive_folder_url: driveFolderUrl, logic_url: logicUrl, lyrics_doc_url: lyricsDocUrl, notes },
-        chords: addedChords.map(c => ({ name: c.name, strings: c.strings, barre: c.barre })),
+        chords: addedChords.map(c => ({ id: c.id, name: c.name, strings: c.strings, barre: c.barre })),
         structureRows: structureRows.map(r => ({
           section_label: r.section_label,
           section_type: r.section_type,
@@ -537,7 +541,10 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
           <div key={row.id} style={{ display: 'flex', flexDirection: 'column', gap: 12, border: '1px solid #17181c', borderRadius: 2, padding: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <input style={{ ...inputStyle, width: 110 }} value={row.section_label} onChange={e => updateStructureRow(row.id, { section_label: e.target.value })} placeholder="SECTION" />
-              <input style={{ ...inputStyle, width: 60 }} value={row.bar_count} onChange={e => updateStructureRow(row.id, { bar_count: e.target.value })} placeholder="×2" />
+              <select style={{ ...inputStyle, width: 72 }} value={row.bar_count} onChange={e => updateStructureRow(row.id, { bar_count: e.target.value })}>
+                <option value="">× reps</option>
+                {[1,2,3,4,6,8,12,16,24,32].map(n => <option key={n} value={n}>×{n}</option>)}
+              </select>
               <select style={{ ...inputStyle, width: 120 }} value={row.section_type} onChange={e => updateStructureRow(row.id, { section_type: e.target.value })}>
                 {SECTION_TYPES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
@@ -545,28 +552,97 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
               <button onClick={() => duplicateStructureRow(row.id)} title="Duplicate row" style={{ background: 'none', border: 'none', color: '#b6b5b2', fontSize: 22, cursor: 'pointer', flex: '0 0 auto', padding: 4, lineHeight: 1 }}>⧉</button>
               <button onClick={() => setStructureRows(prev => prev.filter(r => r.id !== row.id))} style={{ background: 'none', border: 'none', color: '#b6b5b2', fontSize: 18, cursor: 'pointer', flex: '0 0 auto', padding: 4 }}>×</button>
             </div>
-            {addedChords.length > 0 ? (
-              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            {/* ── Mode toggles ── */}
+            {(() => {
+              const mode = row.chord_progression[0] === '__SEE_TAB__' ? 'seetab'
+                : row.chord_progression[0] === '__SAME_AS__' ? 'sameas'
+                : 'normal'
+              const otherRows = structureRows.filter(r => r.id !== row.id && r.chord_progression[0] !== '__SAME_AS__')
+              const btnStyle = (active: boolean): React.CSSProperties => ({
+                fontFamily: 'inherit', fontSize: 11, fontWeight: 600, padding: '3px 10px',
+                borderRadius: 2, border: '1px solid #c2ab8a', background: 'none',
+                color: active ? '#17181c' : '#a4917a', cursor: 'pointer',
+                boxShadow: active ? 'inset 0 0 0 1px #17181c' : 'none',
+              })
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <button style={btnStyle(mode === 'seetab')} onClick={() => updateStructureRow(row.id, { chord_progression: mode === 'seetab' ? [] : ['__SEE_TAB__'] })}>See tab</button>
+                  <button style={btnStyle(mode === 'sameas')} onClick={() => updateStructureRow(row.id, { chord_progression: mode === 'sameas' ? [] : ['__SAME_AS__', otherRows[0] ? (otherRows[0].section_label || otherRows[0].section_type) : ''] })}>Same as…</button>
+                  {mode === 'sameas' && otherRows.length > 0 && (
+                    <select
+                      value={row.chord_progression[1] ?? ''}
+                      onChange={e => updateStructureRow(row.id, { chord_progression: ['__SAME_AS__', e.target.value] })}
+                      style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 2, border: '1px solid #c2ab8a', background: 'none', color: '#17181c', cursor: 'pointer' }}
+                    >
+                      {otherRows.map(r => (
+                        <option key={r.id} value={r.section_label || r.section_type}>
+                          {r.section_label || r.section_type}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {mode === 'sameas' && otherRows.length === 0 && (
+                    <span style={{ fontSize: 11, color: '#b6b5b2' }}>Add other sections first</span>
+                  )}
+                </div>
+              )
+            })()}
+            {/* ── Chord palette ── */}
+            {row.chord_progression[0] !== '__SEE_TAB__' && row.chord_progression[0] !== '__SAME_AS__' && addedChords.length > 0 ? (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {addedChords.map(chord => (
-                  <button key={chord.id} onClick={() => appendChordToRow(row.id, chord.name)} style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11.5, fontWeight: 600, padding: '4px 9px', borderRadius: 2, cursor: 'pointer', background: '#F5F1E4', color: '#37352f', border: 'none' }} className="hover:bg-[#ECE4D2]">
-                    {chord.name}
+                  <button
+                    key={chord.id}
+                    onClick={() => appendChordToRow(row.id, chord.id)}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: '#faf7ee', border: '1px solid #e0d8ca', borderRadius: 2, padding: '6px 6px 4px', cursor: 'pointer' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#17181c')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#e0d8ca')}
+                  >
+                    <ChordDiagram data={buildDiagramData(chord, 'small')} size="small" />
+                    <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 600, color: '#37352f' }}>{chord.name}</span>
                   </button>
                 ))}
               </div>
-            ) : (
+            ) : row.chord_progression[0] !== '__SEE_TAB__' && row.chord_progression[0] !== '__SAME_AS__' ? (
               <div style={{ fontSize: 11.5, color: '#b6b5b2' }}>Add chords above first, then click one to add it here.</div>
-            )}
-            {row.chord_progression.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                {row.chord_progression.map((name, i) => (
-                  <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            ) : null}
+            {/* ── Progression ── */}
+            {row.chord_progression.length > 0 && row.chord_progression[0] !== '__SEE_TAB__' && row.chord_progression[0] !== '__SAME_AS__' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                {row.chord_progression.map((chordId, i) => {
+                  const chord = addedChords.find(c => c.id === chordId)
+                  return (
+                  <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     {i > 0 && <span style={{ fontSize: 11, color: '#d8d7d3' }}>→</span>}
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 600, padding: '3px 6px 3px 8px', borderRadius: 2, background: '#F5F1E4', color: '#37352f' }}>
-                      {name}
-                      <button onClick={() => removeChordFromRow(row.id, i)} style={{ background: 'none', border: 'none', color: '#b6b5b2', fontSize: 13, lineHeight: 1, cursor: 'pointer', padding: 0 }}>×</button>
+                    <span
+                      draggable
+                      onDragStart={() => { progDragRef.current = { rowId: row.id, index: i } }}
+                      onDragOver={e => e.preventDefault()}
+                      onDrop={() => {
+                        const from = progDragRef.current
+                        if (!from || from.rowId !== row.id || from.index === i) return
+                        setStructureRows(prev => prev.map(r => {
+                          if (r.id !== row.id) return r
+                          const prog = [...r.chord_progression]
+                          const [moved] = prog.splice(from.index, 1)
+                          prog.splice(i, 0, moved)
+                          return { ...r, chord_progression: prog }
+                        }))
+                        progDragRef.current = null
+                      }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, fontWeight: 600, padding: '5px 8px 5px 10px', borderRadius: 2, background: '#F5F1E4', color: '#37352f', cursor: 'grab', userSelect: 'none' }}
+                    >
+                      {chord?.name ?? chordId}
+                      <button
+                        onClick={() => removeChordFromRow(row.id, i)}
+                        style={{ background: 'none', border: 'none', color: '#a4917a', fontSize: 16, lineHeight: 1, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#17181c')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#a4917a')}
+                      >×</button>
                     </span>
                   </span>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

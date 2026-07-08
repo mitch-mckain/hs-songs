@@ -72,7 +72,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   await db.from('song_chords').delete().eq('song_id', id)
   if (chords.length > 0) {
     await db.from('song_chords').insert(
-      chords.map((c: { name: string; strings: (number | 'x')[]; barre: unknown }, i: number) => ({
+      chords.map((c: { id?: string; name: string; strings: (number | 'x')[]; barre: unknown }, i: number) => ({
+        ...(c.id ? { id: c.id } : {}),
         song_id: id,
         position: i,
         name: c.name,

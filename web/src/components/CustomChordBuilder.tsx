@@ -10,9 +10,11 @@ const DIAG_FRET_Y = [26, 50, 74, 98] // 4-fret window centers
 function ChordPreview({ strings }: { strings: (number | 'x')[] }) {
   const playedFrets = strings.filter(f => f !== 'x' && f !== 0) as number[]
   const minFret = playedFrets.length > 0 ? Math.min(...playedFrets) : 0
+  const maxFret = playedFrets.length > 0 ? Math.max(...playedFrets) : 0
   const hasOpen = strings.some(f => f === 0)
-  const startFret = hasOpen || minFret <= 1 ? 1 : minFret
-  const showNut = hasOpen || minFret <= 1
+  // Only treat as open position if all fretted notes fit in frets 1–4
+  const startFret = (hasOpen || minFret <= 1) && maxFret <= 4 ? 1 : minFret
+  const showNut = (hasOpen || minFret <= 1) && maxFret <= 4
   const fretLabel = startFret > 1 ? String(startFret) : null
 
   return (

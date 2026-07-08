@@ -89,8 +89,13 @@ export async function getChordShapes(root: string, type: string, tuning: string)
   const db = await getGuitarDb()
   const suffix = SUFFIX_MAP[type] ?? 'major'
 
-  // Normalize root for DB lookup
-  const dbRoot = root.replace('b', 'b') // chords-db uses 'Ab', 'Bb', etc.
+  // For downtuned guitars, look up the shape that sounds like `root` when played in that tuning.
+  // e.g. in Eb std (1 semitone down), an Ab sounds if you play the A shape from standard.
+  const lookupSemitones = isHalfStepDown ? 1 : isFullStepDown ? 2 : 0
+  const lookupRoot = lookupSemitones ? transposeChordName(root, lookupSemitones) : root
+
+  // Normalize root for DB lookup: chords-db uses 'Csharp'/'Fsharp', not 'C#'/'F#'
+  const dbRoot = lookupRoot.replace('#', 'sharp')
   const chordList = db.chords[dbRoot]
   if (!chordList) return []
 
@@ -100,8 +105,12 @@ export async function getChordShapes(root: string, type: string, tuning: string)
   const chordName = formatChordName(root, type)
 
   return match.positions.slice(0, 6).map(pos => {
-    // pos.frets: array of 6, -1=muted, 0=open, 1-n=fret
-    const strings = pos.frets.map(f => f === -1 ? 'x' : f) as (number | 'x')[]
+    // pos.frets: relative fret positions (1 = baseFret). Convert to absolute.
+    const strings = pos.frets.map(f => {
+      if (f === -1) return 'x'
+      if (f === 0) return 0
+      return pos.baseFret + f - 1
+    }) as (number | 'x')[]
     const barre = pos.barres.length > 0 ? detectBarre(pos) : null
     return { name: chordName, strings, barre }
   })
@@ -225,6 +234,28 @@ function formatChordName(root: string, type: string): string {
   return `${root}${suffixes[type] ?? ''}`
 }
 
+// ---- Transpose ----
+const TRANSPOSE_ROOTS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
+
+export function transposeShape(strings: (number | 'x')[], semitones: number): (number | 'x')[] {
+  if (semitones === 0) return strings
+  return strings.map(f => {
+    if (f === 'x') return 'x'
+    const n = (f as number) + semitones
+    return n < 0 ? 'x' : n
+  })
+}
+
+export function transposeChordName(name: string, semitones: number): string {
+  if (semitones === 0) return name
+  const match = name.match(/^([A-G][#b]?)(.*)$/)
+  if (!match) return name
+  const rootIdx = TRANSPOSE_ROOTS.indexOf(match[1])
+  if (rootIdx === -1) return name
+  const newRoot = TRANSPOSE_ROOTS[((rootIdx + semitones) % 12 + 12) % 12]
+  return newRoot + match[2]
+}
+
 // ---- Chord detection ----
 const SEMITONE_TO_NOTE = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
 
@@ -285,7 +316,9 @@ export function buildDiagramData(shape: ChordShape, size: 'small' | 'large' = 'l
   const minFret = playedFrets.length > 0 ? Math.min(...playedFrets) : 0
   const maxFret = playedFrets.length > 0 ? Math.max(...playedFrets) : 0
   const hasOpenStrings = strings.some(f => f === 0)
-  const isOpen = hasOpenStrings || minFret <= 1 || (barre?.fret === 1)
+  // Only treat as "open position" if fretted notes fit within frets 1–4.
+  // Open strings are always shown above the nut regardless of startFret.
+  const isOpen = maxFret <= 4 && (hasOpenStrings || minFret <= 1 || barre?.fret === 1)
   const startFret = isOpen ? 1 : minFret
   const fretLabel = startFret > 1 ? String(startFret) : null
 

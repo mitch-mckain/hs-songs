@@ -85,6 +85,8 @@ export default function LibraryView({ songs, role }: Props) {
   const { play, track, playing, togglePlay } = usePlayer()
 
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'demo' | 'released' | 'retired'>('all')
 
   async function signOut() {
     const supabase = createClient()
@@ -115,10 +117,27 @@ export default function LibraryView({ songs, role }: Props) {
     }
   }
 
+  function relativeTime(dateStr: string): string {
+    const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
+    if (days === 0) return 'today'
+    if (days === 1) return 'yesterday'
+    if (days < 7) return `${days}d ago`
+    if (days < 30) return `${Math.floor(days / 7)}w ago`
+    if (days < 365) return `${Math.floor(days / 30)}mo ago`
+    return `${Math.floor(days / 365)}y ago`
+  }
+
+  // Filter then group
+  const filtered = songs.filter(s => {
+    const matchSearch = !search || s.title.toLowerCase().includes(search.toLowerCase())
+    const matchStatus = statusFilter === 'all' || s.status === statusFilter
+    return matchSearch && matchStatus
+  })
+
   // Group: demos first, then by album
-  const demos = songs.filter(s => s.status === 'demo' || !s.album)
+  const demos = filtered.filter(s => s.status === 'demo' || !s.album)
   const byAlbum: Record<string, Song[]> = {}
-  songs.filter(s => s.status !== 'demo' && s.album).forEach(s => {
+  filtered.filter(s => s.status !== 'demo' && s.album).forEach(s => {
     const album = s.album!
     if (!byAlbum[album]) byAlbum[album] = []
     byAlbum[album].push(s)
@@ -160,10 +179,29 @@ export default function LibraryView({ songs, role }: Props) {
           </div>
         </div>
 
+        {/* Search + filter bar */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search songs…"
+            style={{ flex: '1 1 180px', fontFamily: 'inherit', fontSize: 13, padding: '7px 10px', border: '1px solid #17181c', borderRadius: 2, background: '#FFFFF9', color: '#17181c', outline: 'none' }}
+          />
+          {(['all', 'demo', 'released', 'retired'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setStatusFilter(f)}
+              style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 600, padding: '6px 12px', borderRadius: 2, border: '1px solid #17181c', background: statusFilter === f ? '#17181c' : 'none', color: statusFilter === f ? '#fff' : '#5f5e5b', cursor: 'pointer', textTransform: 'capitalize' }}
+            >
+              {f === 'all' ? 'All' : STATUS_STYLES[f].label}
+            </button>
+          ))}
+        </div>
+
         {/* Song sections */}
         {sections.length === 0 ? (
           <div style={{ color: '#8f8f89', fontSize: 13, fontFamily: 'var(--font-mono), monospace' }}>
-            No songs yet.{isEditor ? ' Add one with "+ New song".' : ''}
+            {search || statusFilter !== 'all' ? 'No songs match.' : `No songs yet.${isEditor ? ' Add one with "+ New song".' : ''}`}
           </div>
         ) : (
           sections.map(section => (
@@ -236,7 +274,8 @@ export default function LibraryView({ songs, role }: Props) {
 
                       {/* Updated date */}
                       <div style={{ fontSize: 11, color: '#c2ab8a', flexShrink: 0, whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono), monospace' }}>
-                        {new Date(song.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        <div>{relativeTime(song.last_updated)}</div>
+                        <div style={{ fontSize: 10, color: '#d6cab0', marginTop: 2 }}>{new Date(song.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                       </div>
                     </div>
                   )

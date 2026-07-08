@@ -46,7 +46,8 @@ export async function POST(request: Request) {
 
   if (chords.length > 0) {
     await db.from('song_chords').insert(
-      chords.map((c: { name: string; strings: (number | 'x')[]; barre: unknown }, i: number) => ({
+      chords.map((c: { id?: string; name: string; strings: (number | 'x')[]; barre: unknown }, i: number) => ({
+        ...(c.id ? { id: c.id } : {}),
         song_id: newSong.id,
         position: i,
         name: c.name,
