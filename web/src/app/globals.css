@@ -2,21 +2,24 @@
 
 @theme inline {
   --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+  --font-ui: var(--font-ui);
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: #ffffff;
+  background: #FFFFF9;
   color: #37352f;
-  font-family: -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: var(--font-ui), -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 ::selection {
   background: #d3e5fc;
   color: #17181c;
 }
+
 
 /* AlphaTab cursor styles */
 .at-cursor-bar { background: rgba(23,24,28,0.06); }

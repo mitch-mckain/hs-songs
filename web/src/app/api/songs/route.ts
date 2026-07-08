@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       capo: song.capo || null,
       tuning: song.tuning,
       time_signature: song.time_signature || null,
+      version: song.version || null,
       drive_folder_url: song.drive_folder_url || null,
       logic_url: song.logic_url || null,
       lyrics_doc_url: song.lyrics_doc_url || null,

@@ -25,14 +25,16 @@ export async function fetchDocText(docId: string, accessToken: string): Promise<
 
   const doc = await res.json()
 
-  // Walk the document body and extract plain text
+  // Walk the document body and extract text, preserving TITLE style
   const lines: string[] = []
   for (const element of doc.body?.content ?? []) {
     if (element.paragraph) {
+      const style: string = element.paragraph.paragraphStyle?.namedStyleType ?? ''
       const text = element.paragraph.elements
         ?.map((el: { textRun?: { content?: string } }) => el.textRun?.content ?? '')
         .join('') ?? ''
-      lines.push(text)
+      // Prefix title paragraphs so the renderer can style them
+      lines.push(style === 'TITLE' ? `\x02TITLE\x03${text}` : text)
     }
   }
 

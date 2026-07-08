@@ -57,6 +57,7 @@ export default function AlphaTabViewer({ fileId, title }: Props) {
         const settings = new at.Settings()
         settings.player.enablePlayer = true
         settings.player.enableCursor = true
+        settings.player.scrollMode = 0 // Off — prevent auto-scroll to cursor
         settings.player.soundFont = 'https://cdn.jsdelivr.net/npm/@coderline/alphatab@latest/dist/soundfont/sonivox.sf2'
         settings.core.fontDirectory = 'https://cdn.jsdelivr.net/npm/@coderline/alphatab@latest/dist/font/'
         settings.display.scale = 0.9
@@ -66,12 +67,14 @@ export default function AlphaTabViewer({ fileId, title }: Props) {
 
         api.scoreLoaded.on((score: { tracks: { name: string }[] }) => {
           if (destroyed) return
+          const savedY = window.scrollY
           const trackList = score.tracks.map((t, i) => ({
             index: i,
             name: t.name?.trim() || `Track ${i + 1}`,
           }))
           setTracks(trackList)
           setLoading(false)
+          requestAnimationFrame(() => window.scrollTo({ top: savedY, behavior: 'instant' }))
         })
 
         api.playerStateChanged.on((e: { state: number }) => {
@@ -128,13 +131,22 @@ export default function AlphaTabViewer({ fileId, title }: Props) {
           disabled={loading || !!error}
           style={{
             width: 34, height: 34, borderRadius: '50%', border: 'none',
-            background: loading || error ? '#e0e0e0' : '#17181c',
+            background: loading || error ? '#ECE4D2' : '#17181c',
             color: '#fff', fontSize: 12,
             cursor: loading || error ? 'not-allowed' : 'pointer',
             flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          {playing ? '⏸' : '▶'}
+          {playing ? (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <rect x="2" y="1" width="4" height="12" rx="1"/>
+              <rect x="8" y="1" width="4" height="12" rx="1"/>
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style={{ marginLeft: 2 }}>
+              <polygon points="2,1 13,7 2,13"/>
+            </svg>
+          )}
         </button>
         <div style={{ fontSize: 12, color: '#9b9a97' }}>
           Guitar Pro tab — {title}
@@ -150,8 +162,8 @@ export default function AlphaTabViewer({ fileId, title }: Props) {
               onClick={() => switchTrack(track.index)}
               style={{
                 fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
-                padding: '6px 12px', borderRadius: 6, cursor: 'pointer', border: 'none',
-                background: activeTrack === track.index ? '#17181c' : '#f1f1ef',
+                padding: '6px 12px', borderRadius: 2, cursor: 'pointer', border: 'none',
+                background: activeTrack === track.index ? '#17181c' : '#ECE4D2',
                 color: activeTrack === track.index ? '#fff' : '#5f5e5b',
               }}
             >

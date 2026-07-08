@@ -11,18 +11,18 @@ const AlphaTabViewer = dynamic(() => import('@/components/AlphaTabViewer'), { ss
 import type { Song, SongChord, SongStructureRow } from '@/types/database'
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  demo:     { bg: '#fbf3db', color: '#946f00',  label: 'Demo' },
-  released: { bg: '#edf3ec', color: '#548164',  label: 'Released' },
-  retired:  { bg: '#f1f1ef', color: '#8a8975',  label: 'Retired' },
+  demo:     { bg: '#FBE3B8', color: '#8A5A16', label: 'Demo' },
+  released: { bg: '#DCEEBF', color: '#4C7A20', label: 'Released' },
+  retired:  { bg: '#E6E1D4', color: '#6b665a', label: 'Retired' },
 }
 
 const PILL_COLORS: Record<string, { bg: string; color: string }> = {
-  intro:   { bg: '#f1f1ef', color: '#8a8975' },
-  verse:   { bg: '#e7f3f8', color: '#337ea9' },
-  prehook: { bg: '#f6f3f9', color: '#9065b0' },
-  chorus:  { bg: '#edf3ec', color: '#548164' },
-  bridge:  { bg: '#fbf3db', color: '#946f00' },
-  outro:   { bg: '#f1f1ef', color: '#8a8975' },
+  intro:   { bg: '#E6E1D4', color: '#6b665a' },
+  verse:   { bg: '#CDECF7', color: '#1D6E8F' },
+  prehook: { bg: '#FBE3B8', color: '#8A5A16' },
+  chorus:  { bg: '#DCEEBF', color: '#4C7A20' },
+  bridge:  { bg: '#E3DBF0', color: '#5B4A87' },
+  outro:   { bg: '#E6E1D4', color: '#6b665a' },
 }
 
 interface Props {
@@ -36,13 +36,17 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
   return (
     <div
       onClick={onToggle}
-      style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', marginBottom: open ? 14 : 0 }}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+        borderBottom: '1px solid #17181c', paddingBottom: 10,
+        marginBottom: open ? 18 : 0,
+      }}
     >
-      <div style={{ fontWeight: 700, fontSize: 20, color: '#17181c' }}>{title}</div>
+      <span style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 20, color: '#17181c', textTransform: 'uppercase', letterSpacing: '0.01em' }}>{title}</span>
       <span style={{
-        fontSize: 12, color: '#c9c8c4', display: 'inline-block',
+        fontSize: 16, color: '#17181c', fontWeight: 700, display: 'inline-block',
         transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
-        transition: 'transform 0.15s',
+        transition: 'transform 0.15s', lineHeight: 1,
       }}>▸</span>
     </div>
   )
@@ -60,6 +64,10 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [lyrics, setLyrics] = useState<string | null>(null)
   const [lyricsError, setLyricsError] = useState<string | null>(null)
   const [lyricsLoading, setLyricsLoading] = useState(false)
+
+  const [notesValue, setNotesValue] = useState(song.notes ?? '')
+  const [notesEditing, setNotesEditing] = useState(false)
+  const [notesSaving, setNotesSaving] = useState(false)
 
   const [demoOpen, setDemoOpen] = useState(true)
   const [notesOpen, setNotesOpen] = useState(true)
@@ -105,21 +113,24 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fff', paddingBottom: 80 }}>
+    <div style={{ minHeight: '100vh', background: '#FFFFF9', paddingBottom: 80 }}>
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px 60px' }}>
 
         {/* Back + Edit */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <button
             onClick={() => router.push('/')}
-            style={{ background: 'none', border: 'none', padding: '6px 8px', marginLeft: -8, fontFamily: 'inherit', fontWeight: 600, fontSize: 13, color: '#9b9a97', cursor: 'pointer', borderRadius: 6 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: '6px 0', fontWeight: 600, fontSize: 12, color: '#8f8f89', cursor: 'pointer', letterSpacing: '0.01em' }}
           >
-            ← Library
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 2L4 7l5 5"/>
+            </svg>
+            Song Dashboard
           </button>
           {isEditor && (
             <button
               onClick={() => router.push(`/songs/${song.id}/edit`)}
-              style={{ fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '7px 14px', borderRadius: 7, cursor: 'pointer', background: '#f1f1ef', color: '#5f5e5b', border: 'none' }}
+              style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 2, cursor: 'pointer', background: 'none', color: '#37352f', border: '1px solid #17181c' }}
             >
               Edit song
             </button>
@@ -129,103 +140,147 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         {/* Title + status + date */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-            <h1 style={{ fontWeight: 700, fontSize: 'clamp(26px,7vw,38px)', color: '#17181c', letterSpacing: '-0.01em', margin: 0 }}>
+            <h1 style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 'clamp(26px,7vw,38px)', color: '#17181c', letterSpacing: '-0.04em', margin: 0 }}>
               {song.title}
             </h1>
-            <span style={{ fontSize: 11.5, fontWeight: 600, padding: '4px 11px', borderRadius: 6, background: status.bg, color: status.color }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 1, fontSize: 12, fontWeight: 600, padding: '4px 9px', borderRadius: 2, background: status.bg, color: status.color, border: `1px solid ${status.color}` }}>
               {status.label}
             </span>
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11.5, color: '#b6b5b2' }}>
+          <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11.5, color: '#c2ab8a' }}>
             Updated {new Date(song.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </div>
         </div>
 
-        {/* Metadata row */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px 24px', padding: '18px 0', borderTop: '1px solid #f1f1ef', borderBottom: '1px solid #f1f1ef' }}>
+        {/* Metadata grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', borderTop: '1px solid #17181c', borderLeft: '1px solid #17181c', borderBottom: '2px solid #17181c', marginBottom: 40 }}>
           {metaFields.map(f => (
-            <div key={f.label}>
-              <div style={{ fontSize: 10, color: '#b6b5b2', letterSpacing: '0.08em', marginBottom: 4 }}>{f.label}</div>
-              <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontWeight: 600, fontSize: 15, color: '#37352f' }}>{f.value}</div>
+            <div key={f.label} style={{ padding: '12px 14px', borderRight: '1px solid #17181c' }}>
+              <div style={{ fontSize: 11, color: '#8f8f89', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 5, fontWeight: 600 }}>{f.label}</div>
+              <div style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 600, fontSize: 17, color: '#17181c' }}>{f.value}</div>
             </div>
           ))}
         </div>
 
         {/* ── DEMO ── */}
-        <div style={{ paddingTop: 32 }}>
+        <div style={{ marginBottom: 32 }}>
           <SectionHeader title="Demo" open={demoOpen} onToggle={() => setDemoOpen(o => !o)} />
           {demoOpen && (
             <div>
-              {song.logic_url && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
-                  <a
-                    href={song.logic_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#5f5e5b', textDecoration: 'none', border: '1px solid #ebebea', borderRadius: 6, padding: '5px 10px' }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#17181c"/><path d="M8 8h8v8H8z" fill="none" stroke="#fff" strokeWidth="1.4"/></svg>
-                    Logic project <span style={{ fontSize: 11, color: '#b6b5b2' }}>↗</span>
-                  </a>
-                </div>
-              )}
               {audioFile ? (
                 <WaveformPlayer
                   songId={song.id}
                   songTitle={song.title}
                   fileId={audioFile.id}
                   fileName={audioFile.name}
+                  logicUrl={song.logic_url ?? undefined}
                 />
-              ) : folderError ? (
-                <div style={{ fontSize: 13, color: '#c9c8c4', fontStyle: 'italic' }}>{folderError}</div>
-              ) : song.drive_folder_url ? (
-                <div style={{ fontSize: 13, color: '#c9c8c4', fontStyle: 'italic' }}>Scanning Drive folder…</div>
               ) : (
-                <div style={{ fontSize: 13, fontStyle: 'italic', color: '#c9c8c4' }}>No Drive folder linked yet — add one in Edit song.</div>
+                <div>
+                  {song.logic_url && (
+                    <a
+                      href={song.logic_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#37352f', textDecoration: 'none', border: '1px solid #17181c', borderRadius: 2, padding: '5px 10px', marginBottom: 12 }}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24"><rect width="24" height="24" rx="2" fill="#17181c"/><path d="M8 8h8v8H8z" fill="none" stroke="#fff" strokeWidth="1.4"/></svg>
+                      Logic project <span style={{ fontSize: 11, color: '#8f8f89' }}>↗</span>
+                    </a>
+                  )}
+                  {folderError ? (
+                    <div style={{ fontSize: 13, color: '#8f8f89', fontStyle: 'italic' }}>{folderError}</div>
+                  ) : song.drive_folder_url ? (
+                    <div style={{ fontSize: 13, color: '#8f8f89', fontStyle: 'italic' }}>Scanning Drive folder…</div>
+                  ) : (
+                    <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>No Drive folder linked yet — add one in Edit song.</div>
+                  )}
+                </div>
               )}
             </div>
           )}
         </div>
 
         {/* ── NOTES ── */}
-        {song.notes && (
-          <div style={{ paddingTop: 32 }}>
+        {(song.notes || isEditor) && (
+          <div style={{ marginBottom: 32 }}>
             <SectionHeader title="Notes" open={notesOpen} onToggle={() => setNotesOpen(o => !o)} />
             {notesOpen && (
-              <div style={{ fontSize: 14.5, color: '#5f5e5b', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
-                {song.notes}
-              </div>
+              notesEditing ? (
+                <textarea
+                  autoFocus
+                  value={notesValue}
+                  onChange={e => setNotesValue(e.target.value)}
+                  onBlur={async () => {
+                    setNotesEditing(false)
+                    if (notesValue === (song.notes ?? '')) return
+                    setNotesSaving(true)
+                    await fetch(`/api/songs/${song.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ notes: notesValue || null }),
+                    })
+                    setNotesSaving(false)
+                  }}
+                  style={{
+                    width: '100%', minHeight: 120, resize: 'vertical',
+                    fontSize: 14.5, color: '#5f5e5b', lineHeight: 1.55,
+                    fontFamily: 'inherit', background: '#faf7ee',
+                    border: '1px solid #17181c', borderRadius: 2,
+                    padding: '10px 12px', outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+              ) : (
+                <div
+                  onClick={() => isEditor && setNotesEditing(true)}
+                  style={{
+                    fontSize: 14.5, color: notesValue ? '#5f5e5b' : '#a4917a',
+                    lineHeight: 1.55, whiteSpace: 'pre-wrap',
+                    cursor: isEditor ? 'text' : 'default',
+                    minHeight: isEditor ? 40 : undefined,
+                    padding: isEditor ? '6px 0' : undefined,
+                  }}
+                >
+                  {notesValue || (isEditor ? 'Click to add notes…' : '')}
+                  {notesSaving && <span style={{ marginLeft: 8, fontSize: 12, color: '#a4917a' }}>Saving…</span>}
+                </div>
+              )
             )}
           </div>
         )}
 
         {/* ── STRUCTURE ── */}
-        <div style={{ paddingTop: 32 }}>
+        <div style={{ marginBottom: 32 }}>
           <SectionHeader title="Structure" open={structureOpen} onToggle={() => setStructureOpen(o => !o)} />
           {structureOpen && (
             structureRows.length === 0 ? (
-              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#c9c8c4' }}>No structure added yet</div>
+              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>No structure added yet</div>
             ) : (
               [...structureRows]
                 .sort((a, b) => a.position - b.position)
                 .map(row => {
                   const pill = PILL_COLORS[row.section_type] ?? PILL_COLORS.verse
-                  const chordNames = (row.chord_progression as string[]).join(' → ')
+                  const chordProgression = row.chord_progression as string[]
                   return (
-                    <div key={row.id} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '14px 0', borderBottom: '1px solid #f1f1ef' }}>
+                    <div key={row.id} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '14px 0', borderBottom: '1px solid #e0d8ca' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ minWidth: 88, textAlign: 'center', fontSize: 11.5, fontWeight: 600, padding: '5px 10px', borderRadius: 6, background: pill.bg, color: pill.color, flex: '0 0 auto' }}>
+                        <div style={{ minWidth: 88, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 2, background: pill.bg, color: pill.color, border: `1px solid ${pill.color}`, flex: '0 0 auto', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                           {row.section_label || row.section_type}
                         </div>
                         {row.bar_count && (
-                          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: '#b6b5b2', flex: '0 0 auto' }}>
+                          <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 12, color: '#a4917a', flex: '0 0 auto' }}>
                             ×{row.bar_count}
                           </div>
                         )}
                       </div>
-                      {chordNames && (
-                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 19, fontWeight: 600, color: '#37352f' }}>
-                          {chordNames}
+                      {chordProgression.length > 0 && (
+                        <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 19, fontWeight: 600, color: '#37352f' }}>
+                          {chordProgression.map((chord, i) => (
+                            <span key={i}>
+                              {i > 0 && <span style={{ margin: '0 6px', fontWeight: 400, color: '#5f5e5b' }}>→</span>}
+                              {chord}
+                            </span>
+                          ))}
                         </div>
                       )}
                       {row.lyric_snippet && (
@@ -239,11 +294,11 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         </div>
 
         {/* ── CHORDS ── */}
-        <div style={{ paddingTop: 32 }}>
+        <div style={{ marginBottom: 32 }}>
           <SectionHeader title="Chords" open={chordsOpen} onToggle={() => setChordsOpen(o => !o)} />
           {chordsOpen && (
             chords.length === 0 ? (
-              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#c9c8c4', paddingBottom: 8 }}>No chords added yet</div>
+              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89', paddingBottom: 8 }}>No chords added yet</div>
             ) : (
               <div>
                 <div style={{ display: 'flex', gap: 24, overflowX: 'auto', paddingBottom: 12, marginBottom: 8 }}>
@@ -252,7 +307,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
                     return (
                       <div key={chord.id} style={{ flex: '0 0 auto', width: 96 }}>
                         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-                          <div style={{ width: 96, height: 44, padding: '0 8px', borderRadius: 12, background: '#191a1a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', overflow: 'hidden', boxSizing: 'border-box', fontWeight: 700, fontSize: 16 }}>
+                          <div style={{ width: 96, height: 44, padding: '0 8px', borderRadius: 2, background: '#17181c', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', overflow: 'hidden', boxSizing: 'border-box', fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16 }}>
                             {chord.name}
                           </div>
                         </div>
@@ -262,7 +317,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
                   })}
                 </div>
                 {song.tuning && !['Std', 'Eb std'].includes(song.tuning) && (
-                  <div style={{ fontSize: 12.5, color: '#b6b5b2', marginBottom: 8 }}>
+                  <div style={{ fontSize: 12.5, color: '#a4917a', marginBottom: 8 }}>
                     Played in {song.tuning} tuning
                   </div>
                 )}
@@ -272,18 +327,18 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         </div>
 
         {/* ── RIFFS & TAB ── */}
-        <div style={{ paddingTop: 32 }}>
+        <div style={{ marginBottom: 32 }}>
           <SectionHeader title="Riffs & tab" open={riffsOpen} onToggle={() => setRiffsOpen(o => !o)} />
           {riffsOpen && (
-            <div style={{ border: '1px solid #ebebea', borderRadius: 10, padding: 16, background: '#fbfbfa' }}>
+            <div style={{ border: '1px solid #17181c', borderRadius: 2, padding: 16, background: '#faf7ee' }}>
               {gpFile ? (
                 <AlphaTabViewer fileId={gpFile.id} title={song.title} />
               ) : song.drive_folder_url ? (
-                <div style={{ fontSize: 13, fontStyle: 'italic', color: '#c9c8c4' }}>
+                <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>
                   No Guitar Pro file found in Drive folder. Add a .gp/.gp5/.gpx file to the folder.
                 </div>
               ) : (
-                <div style={{ fontSize: 13, fontStyle: 'italic', color: '#c9c8c4' }}>
+                <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>
                   No Drive folder linked — add one in Edit song.
                 </div>
               )}
@@ -292,55 +347,57 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         </div>
 
         {/* ── LYRICS ── */}
-        <div style={{ paddingTop: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: lyricsOpen ? 14 : 0, flexWrap: 'wrap' }}>
-            <SectionHeader title="Lyrics" open={lyricsOpen} onToggle={() => setLyricsOpen(o => !o)} />
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #17181c', paddingBottom: 10, marginBottom: lyricsOpen ? 18 : 0, flexWrap: 'wrap' }}>
+            <span
+              onClick={() => setLyricsOpen(o => !o)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1 }}
+            >
+              <span style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 20, color: '#17181c', textTransform: 'uppercase', letterSpacing: '0.01em' }}>Lyrics</span>
+              <span style={{
+                fontSize: 16, color: '#17181c', fontWeight: 700, display: 'inline-block',
+                transform: lyricsOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.15s', lineHeight: 1,
+              }}>▸</span>
+            </span>
             {song.lyrics_doc_url && (
               <a
                 href={song.lyrics_doc_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#5f5e5b', textDecoration: 'none', border: '1px solid #ebebea', borderRadius: 6, padding: '5px 10px' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#37352f', textDecoration: 'none', border: '1px solid #17181c', borderRadius: 2, padding: '5px 10px', flexShrink: 0 }}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#4285f4"/><rect x="6" y="6" width="12" height="1.6" fill="#fff"/><rect x="6" y="10" width="12" height="1.6" fill="#fff"/><rect x="6" y="14" width="8" height="1.6" fill="#fff"/></svg>
-                Lyrics doc <span style={{ fontSize: 11, color: '#b6b5b2' }}>↗</span>
+                <svg width="13" height="13" viewBox="0 0 24 24"><rect width="24" height="24" rx="2" fill="#4285f4"/><rect x="6" y="6" width="12" height="1.6" fill="#fff"/><rect x="6" y="10" width="12" height="1.6" fill="#fff"/><rect x="6" y="14" width="8" height="1.6" fill="#fff"/></svg>
+                Lyrics doc <span style={{ fontSize: 11, color: '#8f8f89' }}>↗</span>
               </a>
             )}
           </div>
           {lyricsOpen && (
             lyricsLoading ? (
-              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#c9c8c4' }}>Loading lyrics…</div>
+              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>Loading lyrics…</div>
             ) : lyricsError ? (
-              <div style={{ fontSize: 13, color: '#c9c8c4' }}>
+              <div style={{ fontSize: 13, color: '#8f8f89' }}>
                 {lyricsError}
                 {song.lyrics_doc_url && (
-                  <> — <a href={song.lyrics_doc_url} target="_blank" rel="noopener noreferrer" style={{ color: '#337ea9' }}>Open doc ↗</a></>
+                  <> — <a href={song.lyrics_doc_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1D6E8F' }}>Open doc ↗</a></>
                 )}
               </div>
             ) : lyrics ? (
-              <div style={{ whiteSpace: 'pre-wrap', fontSize: 15, lineHeight: 1.8, color: '#37352f' }}>
-                {lyrics}
+              <div style={{ fontSize: 15, lineHeight: 1.8, color: '#37352f' }}>
+                {lyrics.split('\n').map((line, i) => {
+                  if (line.startsWith('\x02TITLE\x03')) {
+                    return <div key={i} style={{ fontWeight: 700, fontSize: 22, lineHeight: 1.3, marginBottom: 6 }}>{line.slice(7)}</div>
+                  }
+                  return <div key={i} style={{ whiteSpace: 'pre-wrap' }}>{line || '\u00a0'}</div>
+                })}
               </div>
             ) : (
-              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#c9c8c4' }}>No lyrics doc linked yet</div>
+              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>No lyrics doc linked yet</div>
             )
           )}
         </div>
 
       </div>
     </div>
-  )
-}
-
-function GoogleDriveIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 87.3 78" style={{ flex: '0 0 auto' }}>
-      <path fill="#0066da" d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z"/>
-      <path fill="#00ac47" d="M43.65 25l-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z"/>
-      <path fill="#ea4335" d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z"/>
-      <path fill="#00832d" d="M43.65 25l13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z"/>
-      <path fill="#2684fc" d="M59.7 53h-27.5l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h45.5c1.6 0 3.15-.45 4.5-1.2z"/>
-      <path fill="#ffba00" d="M73.4 27.3l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 13.75 23.8h27.45c0-1.55-.4-3.1-1.2-4.5z"/>
-    </svg>
   )
 }

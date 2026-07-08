@@ -24,8 +24,8 @@ export default function BottomPlayer() {
   return (
     <div style={{
       position: 'fixed', left: 0, right: 0, bottom: 0,
-      background: '#ffffff', borderTop: '1px solid #ebebea',
-      boxShadow: '0 -4px 16px rgba(15,15,15,0.05)', zIndex: 20,
+      background: '#faf7ee', borderTop: '1px solid #17181c',
+      zIndex: 20,
     }}>
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
         {/* Play/pause */}
@@ -33,7 +33,16 @@ export default function BottomPlayer() {
           onClick={togglePlay}
           style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#17181c', color: '#fff', fontSize: 13, cursor: 'pointer', flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          {playing ? '⏸' : '▶'}
+          {playing ? (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <rect x="2" y="1" width="4" height="12" rx="1"/>
+              <rect x="8" y="1" width="4" height="12" rx="1"/>
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style={{ marginLeft: 2 }}>
+              <polygon points="2,1 13,7 2,13"/>
+            </svg>
+          )}
         </button>
 
         {/* Song info */}
@@ -51,7 +60,7 @@ export default function BottomPlayer() {
           onClick={handleProgressClick}
           style={{ flex: 1, height: 32, display: 'flex', alignItems: 'center', position: 'relative', cursor: 'pointer' }}
         >
-          <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: '#ebebea', borderRadius: 1 }} />
+          <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: '#e0d8ca', borderRadius: 1 }} />
           <div style={{ position: 'absolute', left: 0, height: 2, width: `${progress}%`, background: '#17181c', borderRadius: 1 }} />
           <div style={{ position: 'absolute', left: `${progress}%`, width: 11, height: 11, marginLeft: -5.5, borderRadius: '50%', background: '#17181c' }} />
         </div>

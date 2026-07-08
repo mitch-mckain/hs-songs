@@ -1,6 +1,30 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const roleResult = await db.from('user_roles').select('role').eq('user_id', user.id).single()
+  if (roleResult.data?.role !== 'editor') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const body = await request.json()
+  const { error } = await db
+    .from('songs')
+    .update({ ...body, updated_by: user.id, last_updated: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ id })
+}
+
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -27,7 +51,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       album: song.album || null,
       key: song.key || null,
       bpm: song.bpm || null,
+      time_signature: song.time_signature || null,
       capo: song.capo || null,
+      version: song.version || null,
       tuning: song.tuning,
       drive_folder_url: song.drive_folder_url || null,
       logic_url: song.logic_url || null,

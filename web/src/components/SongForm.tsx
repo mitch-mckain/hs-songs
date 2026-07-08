@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getChordShapes, buildDiagramData, type ChordShape } from '@/lib/chords'
 import ChordDiagram from '@/components/ChordDiagram'
+import CustomChordBuilder from '@/components/CustomChordBuilder'
 import type { Song, SongChord, SongStructureRow } from '@/types/database'
 
 const TUNING_OPTIONS = ['Std', 'Eb std', 'D std', 'Drop D', 'D A D F# A D', 'D A E A C# E']
@@ -54,10 +55,10 @@ const inputStyle: React.CSSProperties = {
   fontFamily: "'IBM Plex Mono', monospace",
   fontSize: 14,
   padding: '8px 10px',
-  border: '1px solid #ebebea',
-  borderRadius: 6,
+  border: '1px solid #17181c',
+  borderRadius: 2,
   color: '#37352f',
-  background: '#fff',
+  background: '#faf7ee',
   width: '100%',
   boxSizing: 'border-box',
 }
@@ -65,7 +66,7 @@ const inputStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   fontSize: 10,
   color: '#b6b5b2',
-  letterSpacing: '0.06em',
+  letterSpacing: '0.03em',
   textTransform: 'uppercase',
   marginBottom: 4,
   display: 'block',
@@ -74,7 +75,7 @@ const labelStyle: React.CSSProperties = {
 const sectionHeadingStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 700,
-  letterSpacing: '0.08em',
+  letterSpacing: '0.03em',
   textTransform: 'uppercase',
   color: '#b6b5b2',
   marginBottom: 12,
@@ -90,7 +91,9 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
   const [album, setAlbum] = useState(initialSong?.album ?? '')
   const [key, setKey] = useState(initialSong?.key ?? '')
   const [bpm, setBpm] = useState(initialSong?.bpm ?? '')
+  const [timeSignature, setTimeSignature] = useState(initialSong?.time_signature ?? '')
   const [capo, setCapo] = useState(initialSong?.capo ?? '')
+  const [version, setVersion] = useState(initialSong?.version ?? '')
   const [tuning, setTuning] = useState(initialSong?.tuning ?? 'Eb std')
 
   // Files
@@ -98,6 +101,9 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
   const [logicUrl, setLogicUrl] = useState(initialSong?.logic_url ?? '')
   const [lyricsDocUrl, setLyricsDocUrl] = useState(initialSong?.lyrics_doc_url ?? '')
   const [notes, setNotes] = useState(initialSong?.notes ?? '')
+
+  const [folderScanning, setFolderScanning] = useState(false)
+  const [folderScanError, setFolderScanError] = useState<string | null>(null)
 
   // Riff
   const [riffMode, setRiffMode] = useState<'gp_tab' | 'photo'>('gp_tab')
@@ -108,6 +114,9 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
   const [chordType, setChordType] = useState('major')
   const [voicings, setVoicings] = useState<ChordShape[]>([])
   const [loadingVoicings, setLoadingVoicings] = useState(false)
+  const [showCustomBuilder, setShowCustomBuilder] = useState(false)
+  const [editingChordId, setEditingChordId] = useState<string | null>(null)
+  const dragIndexRef = useRef<number | null>(null)
 
   // Pre-populate chords from existing song
   const [addedChords, setAddedChords] = useState<AddedChord[]>(() =>
@@ -164,6 +173,15 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
     }
   }
 
+  function duplicateStructureRow(id: string) {
+    setStructureRows(prev => {
+      const idx = prev.findIndex(r => r.id === id)
+      if (idx === -1) return prev
+      const copy = { ...prev[idx], id: crypto.randomUUID() }
+      return [...prev.slice(0, idx + 1), copy, ...prev.slice(idx + 1)]
+    })
+  }
+
   function addStructureRow() {
     setStructureRows(prev => [...prev, {
       id: crypto.randomUUID(),
@@ -193,12 +211,32 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
     ))
   }
 
+  async function scanFolder(url: string) {
+    if (!url) return
+    setFolderScanning(true)
+    setFolderScanError(null)
+    try {
+      const res = await fetch(`/api/drive/folder?url=${encodeURIComponent(url)}`)
+      const data = await res.json()
+      if (data.error) {
+        setFolderScanError(data.error.includes('access token') ? 'Google session expired — sign out and back in.' : data.error)
+      } else {
+        if (data.logicFile?.url) setLogicUrl(data.logicFile.url)
+        if (data.docFile?.url) setLyricsDocUrl(data.docFile.url)
+      }
+    } catch {
+      setFolderScanError('Failed to scan folder')
+    } finally {
+      setFolderScanning(false)
+    }
+  }
+
   async function handleSave() {
     if (!title) return
     setSaving(true)
     try {
       const payload = {
-        song: { title, status, album, key, bpm, capo, tuning, drive_folder_url: driveFolderUrl, logic_url: logicUrl, lyrics_doc_url: lyricsDocUrl, notes },
+        song: { title, status, album, key, bpm, time_signature: timeSignature, capo, version, tuning, drive_folder_url: driveFolderUrl, logic_url: logicUrl, lyrics_doc_url: lyricsDocUrl, notes },
         chords: addedChords.map(c => ({ name: c.name, strings: c.strings, barre: c.barre })),
         structureRows: structureRows.map(r => ({
           section_label: r.section_label,
@@ -223,7 +261,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
   const cancelTarget = isEdit ? `/songs/${initialSong!.id}` : '/'
 
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 20px 140px' }}>
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 20px 140px', minHeight: '100vh' }}>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <button
@@ -233,13 +271,13 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
           ← {isEdit ? 'Cancel' : 'Cancel'}
         </button>
       </div>
-      <div style={{ fontWeight: 700, fontSize: 'clamp(24px,6vw,32px)', color: '#17181c', marginBottom: 28, letterSpacing: '-0.02em' }}>
+      <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 'clamp(24px,6vw,32px)', color: '#17181c', marginBottom: 28, letterSpacing: '-0.04em' }}>
         {isEdit ? `Edit — ${initialSong!.title}` : 'New song'}
       </div>
 
       {/* ── DETAILS ── */}
       <div style={sectionHeadingStyle}>Details</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 32 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 220px' }}>
           <label style={labelStyle}>Title</label>
           <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} placeholder="Song title" />
@@ -252,25 +290,36 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
             <option value="retired">Retired</option>
           </select>
         </div>
+      </div>
+      <div style={{ borderTop: '1px solid #e0d8ca', marginBottom: 14 }} />
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 32 }}>
         {status === 'released' && (
           <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 200px' }}>
             <label style={labelStyle}>Album</label>
             <input style={inputStyle} value={album} onChange={e => setAlbum(e.target.value)} placeholder="Album name" />
           </div>
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 90px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 90px' }}>
           <label style={labelStyle}>Key</label>
           <input style={inputStyle} value={key} onChange={e => setKey(e.target.value)} placeholder="G" />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 90px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 90px' }}>
           <label style={labelStyle}>BPM</label>
           <input style={inputStyle} value={bpm} onChange={e => setBpm(e.target.value)} placeholder="~140" />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 90px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 90px' }}>
+          <label style={labelStyle}>Time sig</label>
+          <input style={inputStyle} value={timeSignature} onChange={e => setTimeSignature(e.target.value)} placeholder="4/4" />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 90px' }}>
           <label style={labelStyle}>Capo</label>
           <input style={inputStyle} value={capo} onChange={e => setCapo(e.target.value)} placeholder="—" />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 160px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 90px' }}>
+          <label style={labelStyle}>Version</label>
+          <input style={inputStyle} value={version} onChange={e => setVersion(e.target.value)} placeholder="v1" />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 160px' }}>
           <label style={labelStyle}>Tuning</label>
           <select style={inputStyle} value={tuning} onChange={e => setTuning(e.target.value)}>
             {TUNING_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
@@ -282,19 +331,38 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
       <div style={sectionHeadingStyle}>Files (Google Drive)</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
         <label style={labelStyle}>Drive Folder Link</label>
-        <input style={inputStyle} value={driveFolderUrl} onChange={e => setDriveFolderUrl(e.target.value)} placeholder="https://drive.google.com/drive/folders/…" />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            style={{ ...inputStyle, flex: 1 }}
+            value={driveFolderUrl}
+            onChange={e => setDriveFolderUrl(e.target.value)}
+            onBlur={e => scanFolder(e.target.value)}
+            placeholder="https://drive.google.com/drive/folders/…"
+          />
+          <button
+            type="button"
+            onClick={() => scanFolder(driveFolderUrl)}
+            disabled={!driveFolderUrl || folderScanning}
+            style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 2, border: '1px solid #17181c', background: '#F5F1E4', color: '#5f5e5b', cursor: driveFolderUrl ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
+            {folderScanning ? 'Scanning…' : 'Scan folder'}
+          </button>
+        </div>
       </div>
-      <div style={{ fontSize: 12, color: '#b6b5b2', marginBottom: 18 }}>
-        This folder should hold the lyric doc, the .gp tab, the Logic project, and the mp3 demo.
+      <div style={{ fontSize: 12, color: '#b6b5b2', marginBottom: folderScanError ? 6 : 18 }}>
+        Paste your Drive folder link — the app will detect the Logic project, lyrics doc, demo mp3, and GP tab automatically.
       </div>
+      {folderScanError && (
+        <div style={{ fontSize: 12, color: '#946f00', marginBottom: 18 }}>{folderScanError}</div>
+      )}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 32 }}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 220px' }}>
           <label style={labelStyle}>Logic Project Link</label>
-          <input style={inputStyle} value={logicUrl} onChange={e => setLogicUrl(e.target.value)} placeholder="https://drive.google.com/…" />
+          <input style={inputStyle} value={logicUrl} onChange={e => setLogicUrl(e.target.value)} placeholder="Auto-detected from folder" />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 220px' }}>
           <label style={labelStyle}>Lyrics Doc Link</label>
-          <input style={inputStyle} value={lyricsDocUrl} onChange={e => setLyricsDocUrl(e.target.value)} placeholder="https://docs.google.com/…" />
+          <input style={inputStyle} value={lyricsDocUrl} onChange={e => setLyricsDocUrl(e.target.value)} placeholder="Auto-detected from folder" />
         </div>
       </div>
 
@@ -317,13 +385,13 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
           <button
             key={mode}
             onClick={() => setRiffMode(mode)}
-            style={{ fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '7px 14px', borderRadius: 6, cursor: 'pointer', border: 'none', background: riffMode === mode ? '#17181c' : '#f1f1ef', color: riffMode === mode ? '#fff' : '#5f5e5b' }}
+            style={{ fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '7px 14px', borderRadius: 2, cursor: 'pointer', border: 'none', background: riffMode === mode ? '#17181c' : '#F5F1E4', color: riffMode === mode ? '#fff' : '#5f5e5b' }}
           >
             {mode === 'gp_tab' ? 'Guitar Pro tab' : 'Photo'}
           </button>
         ))}
       </div>
-      <div style={{ border: '1px solid #ebebea', borderRadius: 10, padding: 16, background: '#fbfbfa', marginBottom: 32 }}>
+      <div style={{ border: '1px solid #17181c', borderRadius: 2, padding: 16, background: '#faf7ee', marginBottom: 32 }}>
         {riffMode === 'gp_tab' ? (
           <div>
             <input type="file" accept=".gp,.gp3,.gp4,.gp5,.gpx" onChange={e => setTabFile(e.target.files?.[0] ?? null)} style={{ fontSize: 13 }} />
@@ -360,7 +428,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
       <div style={{ fontSize: 12, color: '#b6b5b2', marginBottom: 8 }}>
         Every fingering available for this chord — pick whichever fits how you play it.
       </div>
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', padding: 12, border: '1px solid #ebebea', borderRadius: 10, marginBottom: 18, maxHeight: 280, overflowY: 'auto' }}>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', padding: 12, border: '1px solid #17181c', borderRadius: 2, marginBottom: 18, maxHeight: 280, overflowY: 'auto' }}>
         {loadingVoicings ? (
           <div style={{ fontSize: 13, color: '#c9c8c4', padding: 8, fontStyle: 'italic' }}>Loading…</div>
         ) : voicings.length === 0 ? (
@@ -368,12 +436,30 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
         ) : voicings.map((v, i) => {
           const diagram = buildDiagramData(v, 'small')
           return (
-            <div key={i} onClick={() => addChord(v)} style={{ flex: '0 0 auto', width: 80, cursor: 'pointer', padding: 6, borderRadius: 8 }} className="hover:bg-[#f1f1ef]">
+            <div key={i} onClick={() => addChord(v)} style={{ flex: '0 0 auto', width: 80, cursor: 'pointer', padding: 6, borderRadius: 2 }} className="hover:bg-[#ECE4D2]">
               <div style={{ fontWeight: 700, fontSize: 12, color: '#17181c', textAlign: 'center', marginBottom: 6 }}>{v.name}</div>
               <ChordDiagram data={diagram} size="small" />
             </div>
           )
         })}
+      </div>
+
+      {/* Custom chord builder (new chord only) */}
+      <div style={{ marginBottom: 16 }}>
+        {showCustomBuilder ? (
+          <CustomChordBuilder
+            tuning={tuning}
+            onAdd={(shape) => { addChord(shape); setShowCustomBuilder(false) }}
+            onCancel={() => setShowCustomBuilder(false)}
+          />
+        ) : (
+          <button
+            onClick={() => setShowCustomBuilder(true)}
+            style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 2, border: '1px solid #17181c', background: 'none', color: '#37352f', cursor: 'pointer' }}
+          >
+            Build custom chord
+          </button>
+        )}
       </div>
 
       <div style={{ fontSize: 12, fontWeight: 600, color: '#9b9a97', marginBottom: 10 }}>Song chords</div>
@@ -382,9 +468,44 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 32 }}>
           {addedChords.map(chord => {
+            if (editingChordId === chord.id) {
+              return (
+                <div key={chord.id}>
+                  <CustomChordBuilder
+                    tuning={tuning}
+                    initialStrings={chord.strings as (number | 'x')[]}
+                    initialName={chord.name}
+                    submitLabel="Update chord"
+                    onAdd={(shape) => {
+                      setAddedChords(prev => prev.map(c => c.id === chord.id ? { ...c, ...shape } : c))
+                      setEditingChordId(null)
+                    }}
+                    onCancel={() => setEditingChordId(null)}
+                  />
+                </div>
+              )
+            }
             const diagram = buildDiagramData(chord, 'large')
+            const chordIndex = addedChords.findIndex(c => c.id === chord.id)
             return (
-              <div key={chord.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, border: '1px solid #ebebea', borderRadius: 10, padding: 14, flexWrap: 'wrap' }}>
+              <div
+                key={chord.id}
+                draggable
+                onDragStart={() => { dragIndexRef.current = chordIndex }}
+                onDragOver={e => e.preventDefault()}
+                onDrop={() => {
+                  const from = dragIndexRef.current
+                  if (from === null || from === chordIndex) return
+                  setAddedChords(prev => {
+                    const next = [...prev]
+                    const [moved] = next.splice(from, 1)
+                    next.splice(chordIndex, 0, moved)
+                    return next
+                  })
+                  dragIndexRef.current = null
+                }}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 14, border: '1px solid #17181c', borderRadius: 2, padding: 14, flexWrap: 'wrap', cursor: 'grab' }}
+              >
                 <ChordDiagram data={diagram} size="large" />
                 <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#17181c' }}>{chord.name}</div>
@@ -392,14 +513,17 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
                     {chord.strings.map((s, i) => (
                       <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         <span style={{ fontSize: 9, color: '#b6b5b2' }}>{'EADGBE'[i]}</span>
-                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: '#5f5e5b', width: 34, textAlign: 'center', padding: '4px 2px', border: '1px solid #ebebea', borderRadius: 4 }}>
+                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: '#5f5e5b', width: 34, textAlign: 'center', padding: '4px 2px', border: '1px solid #17181c', borderRadius: 2 }}>
                           {s === 'x' ? '×' : s}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-                <button onClick={() => removeChord(chord.id)} style={{ background: 'none', border: 'none', color: '#b6b5b2', fontSize: 18, cursor: 'pointer', flex: '0 0 auto', padding: 4 }}>×</button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 auto' }}>
+                  <button onClick={() => setEditingChordId(chord.id)} style={{ background: 'none', border: '1px solid #c2ab8a', borderRadius: 2, color: '#5f5e5b', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: '3px 8px', fontFamily: 'inherit' }}>Edit</button>
+                  <button onClick={() => removeChord(chord.id)} style={{ background: 'none', border: 'none', color: '#b6b5b2', fontSize: 18, cursor: 'pointer', padding: 4, lineHeight: 1 }}>×</button>
+                </div>
               </div>
             )
           })}
@@ -410,7 +534,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
       <div style={sectionHeadingStyle}>Structure</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
         {structureRows.map(row => (
-          <div key={row.id} style={{ display: 'flex', flexDirection: 'column', gap: 12, border: '1px solid #ebebea', borderRadius: 10, padding: 14 }}>
+          <div key={row.id} style={{ display: 'flex', flexDirection: 'column', gap: 12, border: '1px solid #17181c', borderRadius: 2, padding: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <input style={{ ...inputStyle, width: 110 }} value={row.section_label} onChange={e => updateStructureRow(row.id, { section_label: e.target.value })} placeholder="SECTION" />
               <input style={{ ...inputStyle, width: 60 }} value={row.bar_count} onChange={e => updateStructureRow(row.id, { bar_count: e.target.value })} placeholder="×2" />
@@ -418,12 +542,13 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
                 {SECTION_TYPES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
               <input style={{ ...inputStyle, flex: '1 1 160px' }} value={row.lyric_snippet} onChange={e => updateStructureRow(row.id, { lyric_snippet: e.target.value })} placeholder="Lyric snippet" />
+              <button onClick={() => duplicateStructureRow(row.id)} title="Duplicate row" style={{ background: 'none', border: 'none', color: '#b6b5b2', fontSize: 22, cursor: 'pointer', flex: '0 0 auto', padding: 4, lineHeight: 1 }}>⧉</button>
               <button onClick={() => setStructureRows(prev => prev.filter(r => r.id !== row.id))} style={{ background: 'none', border: 'none', color: '#b6b5b2', fontSize: 18, cursor: 'pointer', flex: '0 0 auto', padding: 4 }}>×</button>
             </div>
             {addedChords.length > 0 ? (
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                 {addedChords.map(chord => (
-                  <button key={chord.id} onClick={() => appendChordToRow(row.id, chord.name)} style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11.5, fontWeight: 600, padding: '4px 9px', borderRadius: 5, cursor: 'pointer', background: '#f1f1ef', color: '#37352f', border: 'none' }} className="hover:bg-[#e8e8e5]">
+                  <button key={chord.id} onClick={() => appendChordToRow(row.id, chord.name)} style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11.5, fontWeight: 600, padding: '4px 9px', borderRadius: 2, cursor: 'pointer', background: '#F5F1E4', color: '#37352f', border: 'none' }} className="hover:bg-[#ECE4D2]">
                     {chord.name}
                   </button>
                 ))}
@@ -436,7 +561,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
                 {row.chord_progression.map((name, i) => (
                   <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                     {i > 0 && <span style={{ fontSize: 11, color: '#d8d7d3' }}>→</span>}
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 600, padding: '3px 6px 3px 8px', borderRadius: 5, background: '#f1f1ef', color: '#37352f' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 600, padding: '3px 6px 3px 8px', borderRadius: 2, background: '#F5F1E4', color: '#37352f' }}>
                       {name}
                       <button onClick={() => removeChordFromRow(row.id, i)} style={{ background: 'none', border: 'none', color: '#b6b5b2', fontSize: 13, lineHeight: 1, cursor: 'pointer', padding: 0 }}>×</button>
                     </span>
@@ -448,7 +573,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
         ))}
       </div>
       <div style={{ fontSize: 12, color: '#b6b5b2', marginBottom: 12 }}>Click a chord to append it to that row's progression, in order.</div>
-      <button onClick={addStructureRow} style={{ fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '7px 14px', borderRadius: 6, cursor: 'pointer', background: '#f1f1ef', color: '#5f5e5b', border: 'none', marginBottom: 36 }}>
+      <button onClick={addStructureRow} style={{ fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '7px 14px', borderRadius: 2, cursor: 'pointer', background: '#F5F1E4', color: '#5f5e5b', border: 'none', marginBottom: 36 }}>
         + Add row
       </button>
 
@@ -457,7 +582,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
         <button
           onClick={handleSave}
           disabled={!title || saving}
-          style={{ fontFamily: 'inherit', fontSize: 14, fontWeight: 700, padding: '12px 22px', borderRadius: 8, cursor: title ? 'pointer' : 'not-allowed', background: title ? '#17181c' : '#e0e0e0', color: '#fff', border: 'none' }}
+          style={{ fontFamily: 'inherit', fontSize: 14, fontWeight: 700, padding: '12px 22px', borderRadius: 2, cursor: title ? 'pointer' : 'not-allowed', background: title ? '#17181c' : '#ECE4D2', color: title ? '#fff' : '#a4917a', border: 'none' }}
         >
           {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Save song'}
         </button>

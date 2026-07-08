@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { extractFolderId, listFolderFiles, isAudioFile, isGpFile } from '@/lib/drive'
+import { extractFolderId, listFolderFiles, isAudioFile, isGpFile, isLogicFile, isGoogleDoc } from '@/lib/drive'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -23,11 +23,22 @@ export async function GET(request: Request) {
     const files = await listFolderFiles(folderId, accessToken)
     const audioFile = files.find(isAudioFile) ?? null
     const gpFile = files.find(isGpFile) ?? null
+    const logicFile = files.find(isLogicFile) ?? null
+    const docFile = files.find(isGoogleDoc) ?? null
 
     return NextResponse.json({
       audioFile: audioFile ? { id: audioFile.id, name: audioFile.name } : null,
       gpFile: gpFile ? { id: gpFile.id, name: gpFile.name } : null,
-      allFiles: files.map(f => ({ id: f.id, name: f.name, mimeType: f.mimeType })),
+      logicFile: logicFile ? {
+        id: logicFile.id,
+        name: logicFile.name,
+        url: `https://drive.google.com/file/d/${logicFile.id}/view`,
+      } : null,
+      docFile: docFile ? {
+        id: docFile.id,
+        name: docFile.name,
+        url: `https://docs.google.com/document/d/${docFile.id}/edit`,
+      } : null,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to list folder'

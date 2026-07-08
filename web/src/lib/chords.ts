@@ -225,6 +225,58 @@ function formatChordName(root: string, type: string): string {
   return `${root}${suffixes[type] ?? ''}`
 }
 
+// ---- Chord detection ----
+const SEMITONE_TO_NOTE = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
+
+export function detectChordName(strings: (number | 'x')[], tuning: string): string | null {
+  const tuningNotes = TUNING_MAP[tuning] ?? STD_TUNING
+  const playedNotes: number[] = []
+  strings.forEach((fret, i) => {
+    if (fret !== 'x') playedNotes.push((tuningNotes[i] + (fret as number)) % 12)
+  })
+  if (playedNotes.length < 2) return null
+
+  const noteSet = new Set(playedNotes)
+  const uniqueNotes = [...noteSet]
+  const bassNote = playedNotes[0] // lowest played string
+
+  // Ordered root candidates: bass note first, then rest of unique notes, then all 12
+  const triedRoots = new Set<number>()
+  const rootOrder: number[] = [bassNote, ...uniqueNotes.filter(n => n !== bassNote)]
+  for (let i = 0; i < 12; i++) if (!rootOrder.includes(i)) rootOrder.push(i)
+
+  // Exact match: played notes == chord tones
+  for (const rootSemi of rootOrder) {
+    if (triedRoots.has(rootSemi)) continue
+    triedRoots.add(rootSemi)
+    for (const [typeName, intervals] of Object.entries(CHORD_INTERVALS)) {
+      const chordTones = new Set(intervals.map(i => (rootSemi + i) % 12))
+      if (
+        uniqueNotes.every(n => chordTones.has(n)) &&
+        [...chordTones].every(n => noteSet.has(n))
+      ) {
+        return formatChordName(SEMITONE_TO_NOTE[rootSemi], typeName)
+      }
+    }
+  }
+
+  // Partial match: best coverage score
+  let best: { name: string; score: number } | null = null
+  for (let rootSemi = 0; rootSemi < 12; rootSemi++) {
+    for (const [typeName, intervals] of Object.entries(CHORD_INTERVALS)) {
+      const chordTones = intervals.map(i => (rootSemi + i) % 12)
+      const matched = uniqueNotes.filter(n => chordTones.includes(n)).length
+      const extra = uniqueNotes.filter(n => !chordTones.includes(n)).length
+      const score = matched / chordTones.length - extra * 0.4
+      if (score >= 0.65 && (!best || score > best.score)) {
+        best = { name: formatChordName(SEMITONE_TO_NOTE[rootSemi], typeName), score }
+      }
+    }
+  }
+
+  return best?.name ?? null
+}
+
 // ---- Diagram rendering ----
 export function buildDiagramData(shape: ChordShape, size: 'small' | 'large' = 'large'): DiagramData {
   const { strings, barre } = shape
@@ -232,7 +284,8 @@ export function buildDiagramData(shape: ChordShape, size: 'small' | 'large' = 'l
   const playedFrets = strings.filter(f => f !== 'x' && f !== 0) as number[]
   const minFret = playedFrets.length > 0 ? Math.min(...playedFrets) : 0
   const maxFret = playedFrets.length > 0 ? Math.max(...playedFrets) : 0
-  const isOpen = minFret === 0 || (barre?.fret === 1)
+  const hasOpenStrings = strings.some(f => f === 0)
+  const isOpen = hasOpenStrings || minFret <= 1 || (barre?.fret === 1)
   const startFret = isOpen ? 1 : minFret
   const fretLabel = startFret > 1 ? String(startFret) : null
 

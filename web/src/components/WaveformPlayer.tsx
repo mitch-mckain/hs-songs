@@ -10,6 +10,7 @@ interface Props {
   songTitle: string
   fileId: string
   fileName: string
+  logicUrl?: string
 }
 
 function formatTime(s: number): string {
@@ -19,7 +20,7 @@ function formatTime(s: number): string {
   return `${m}:${sec.toString().padStart(2, '0')}`
 }
 
-export default function WaveformPlayer({ songId, songTitle, fileId, fileName }: Props) {
+export default function WaveformPlayer({ songId, songTitle, fileId, fileName, logicUrl }: Props) {
   const { track, playing, currentTime, duration, play, seek } = usePlayer()
   const [bars, setBars] = useState<number[]>([])
   const [loadingWaveform, setLoadingWaveform] = useState(true)
@@ -51,7 +52,6 @@ export default function WaveformPlayer({ songId, songTitle, fileId, fileName }: 
           heights.push(sum / blockSize)
         }
         const max = Math.max(...heights, 0.001)
-        // Scale to 4–32px range
         setBars(heights.map(h => 4 + Math.round((h / max) * 28)))
         await ctx.close()
       } catch {
@@ -75,7 +75,6 @@ export default function WaveformPlayer({ songId, songTitle, fileId, fileName }: 
       seek(fraction)
     } else {
       play({ songId, songTitle, fileId, fileName })
-      // Seek after a short delay to let audio load
       setTimeout(() => seek(fraction), 300)
     }
   }
@@ -85,23 +84,41 @@ export default function WaveformPlayer({ songId, songTitle, fileId, fileName }: 
   }
 
   return (
-    <div style={{ border: '1px solid #ebebea', borderRadius: 10, padding: 20, background: '#fbfbfa' }}>
+    <div style={{ border: '1px solid #17181c', borderRadius: 2, padding: 20, background: '#faf7ee' }}>
       {/* File header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         <GoogleDriveIcon />
-        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12.5, color: '#5f5e5b' }}>{fileName}</div>
-        <div style={{ fontSize: 10, color: '#b6b5b2', letterSpacing: '0.05em', border: '1px solid #ebebea', padding: '2px 7px', borderRadius: 5 }}>
-          GOOGLE DRIVE
-        </div>
+        <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 12.5, color: '#5f5e5b', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fileName}</div>
+        {logicUrl && (
+          <a
+            href={logicUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#37352f', textDecoration: 'none', border: '1px solid #17181c', borderRadius: 2, padding: '3px 8px', flexShrink: 0 }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24"><rect width="24" height="24" rx="2" fill="#17181c"/><path d="M8 8h8v8H8z" fill="none" stroke="#fff" strokeWidth="1.4"/></svg>
+            Logic project <span style={{ fontSize: 10, color: '#8f8f89' }}>↗</span>
+          </a>
+        )}
       </div>
 
       {/* Player controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <button
           onClick={handlePlayPause}
-          style={{ width: 38, height: 38, borderRadius: '50%', border: 'none', background: '#17181c', color: '#fff', fontSize: 13, cursor: 'pointer', flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#17181c', color: '#fff', cursor: 'pointer', flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          {isPlaying ? '⏸' : '▶'}
+          {isPlaying ? (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <rect x="2" y="1" width="4" height="12" rx="1"/>
+              <rect x="8" y="1" width="4" height="12" rx="1"/>
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style={{ marginLeft: 2 }}>
+              <polygon points="2,1 13,7 2,13"/>
+            </svg>
+          )}
         </button>
 
         {/* Waveform */}
@@ -110,21 +127,21 @@ export default function WaveformPlayer({ songId, songTitle, fileId, fileName }: 
           style={{ flex: 1, height: 38, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', overflow: 'hidden' }}
         >
           {loadingWaveform ? (
-            <div style={{ flex: 1, height: 2, background: '#e3e2df', borderRadius: 1 }} />
+            <div style={{ flex: 1, height: 2, background: '#e0d8ca', borderRadius: 1 }} />
           ) : bars.map((h, i) => {
             const fraction = i / BAR_COUNT
             const played = fraction <= progress
             return (
               <div
                 key={i}
-                style={{ flex: '1 1 0', minWidth: 1, borderRadius: 1, height: h, background: played ? '#337ea9' : '#e3e2df' }}
+                style={{ flex: '1 1 0', minWidth: 1, borderRadius: 1, height: h, background: played ? '#d0471e' : '#e0d8ca' }}
               />
             )
           })}
         </div>
 
         {/* Time */}
-        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: '#b6b5b2', width: 76, whiteSpace: 'nowrap', textAlign: 'right', flex: '0 0 auto' }}>
+        <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11, color: '#a4917a', width: 76, whiteSpace: 'nowrap', textAlign: 'right', flex: '0 0 auto' }}>
           {isActive ? `${formatTime(currentTime)} / ${formatTime(duration)}` : formatTime(0)}
         </div>
       </div>

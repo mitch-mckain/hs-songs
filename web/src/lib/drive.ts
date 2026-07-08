@@ -24,6 +24,7 @@ export interface DriveFile {
 const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac']
 const AUDIO_MIME_PREFIXES = ['audio/']
 const GP_EXTENSIONS = ['.gp', '.gp3', '.gp4', '.gp5', '.gpx']
+const LOGIC_EXTENSIONS = ['.logicx', '.logic']
 
 export function isAudioFile(file: DriveFile): boolean {
   const nameLower = file.name.toLowerCase()
@@ -36,6 +37,15 @@ export function isAudioFile(file: DriveFile): boolean {
 export function isGpFile(file: DriveFile): boolean {
   const nameLower = file.name.toLowerCase()
   return GP_EXTENSIONS.some(ext => nameLower.endsWith(ext))
+}
+
+export function isLogicFile(file: DriveFile): boolean {
+  const nameLower = file.name.toLowerCase()
+  return LOGIC_EXTENSIONS.some(ext => nameLower.endsWith(ext))
+}
+
+export function isGoogleDoc(file: DriveFile): boolean {
+  return file.mimeType === 'application/vnd.google-apps.document'
 }
 
 /**
