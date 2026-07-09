@@ -98,6 +98,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
 
   // Files
   const [driveFolderUrl, setDriveFolderUrl] = useState(initialSong?.drive_folder_url ?? '')
+  const [practiceFolderUrl, setPracticeFolderUrl] = useState(initialSong?.practice_folder_url ?? '')
   const [logicUrl, setLogicUrl] = useState(initialSong?.logic_url ?? '')
   const [lyricsDocUrl, setLyricsDocUrl] = useState(initialSong?.lyrics_doc_url ?? '')
   const [notes, setNotes] = useState(initialSong?.notes ?? '')
@@ -240,7 +241,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
     setSaving(true)
     try {
       const payload = {
-        song: { title, status, album, key, bpm, time_signature: timeSignature, capo, version, tuning, drive_folder_url: driveFolderUrl, logic_url: logicUrl, lyrics_doc_url: lyricsDocUrl, notes },
+        song: { title, status, album, key, bpm, time_signature: timeSignature, capo, version, tuning, drive_folder_url: driveFolderUrl, practice_folder_url: practiceFolderUrl, logic_url: logicUrl, lyrics_doc_url: lyricsDocUrl, notes },
         chords: addedChords.map(c => ({ id: c.id, name: c.name, strings: c.strings, barre: c.barre })),
         structureRows: structureRows.map(r => ({
           section_label: r.section_label,
@@ -359,7 +360,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
       {folderScanError && (
         <div style={{ fontSize: 12, color: '#946f00', marginBottom: 18 }}>{folderScanError}</div>
       )}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 32 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 220px' }}>
           <label style={labelStyle}>Logic Project Link</label>
           <input style={inputStyle} value={logicUrl} onChange={e => setLogicUrl(e.target.value)} placeholder="Auto-detected from folder" />
@@ -369,16 +370,51 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
           <input style={inputStyle} value={lyricsDocUrl} onChange={e => setLyricsDocUrl(e.target.value)} placeholder="Auto-detected from folder" />
         </div>
       </div>
+      <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 32 }}>
+        <label style={labelStyle}>Practice Recordings Folder</label>
+        <input style={inputStyle} value={practiceFolderUrl} onChange={e => setPracticeFolderUrl(e.target.value)} placeholder="Google Drive folder URL for room recordings" />
+      </div>
 
       {/* ── NOTES ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 32 }}>
         <label style={labelStyle}>Notes</label>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+          {[
+            { label: 'H2', insert: '## ' },
+            { label: 'H3', insert: '### ' },
+            { label: '•', insert: '- ' },
+            { label: 'B', insert: '**', wrap: true },
+          ].map(btn => (
+            <button
+              key={btn.label}
+              type="button"
+              onClick={() => {
+                const ta = document.getElementById('notes-textarea') as HTMLTextAreaElement
+                if (!ta) return
+                const start = ta.selectionStart, end = ta.selectionEnd
+                const val = ta.value
+                let next: string
+                if (btn.wrap) {
+                  next = val.slice(0, start) + `**${val.slice(start, end)}**` + val.slice(end)
+                } else {
+                  // insert at start of line
+                  const lineStart = val.lastIndexOf('\n', start - 1) + 1
+                  next = val.slice(0, lineStart) + btn.insert + val.slice(lineStart)
+                }
+                setNotes(next)
+                setTimeout(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = start + btn.insert.length }, 0)
+              }}
+              style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 2, border: '1px solid #c2ab8a', background: 'none', color: '#5f5e5b', cursor: 'pointer' }}
+            >{btn.label}</button>
+          ))}
+        </div>
         <textarea
-          style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5, fontFamily: 'inherit' } as React.CSSProperties}
+          id="notes-textarea"
+          style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6, fontFamily: 'var(--font-mono), monospace', fontSize: 13 } as React.CSSProperties}
           value={notes}
           onChange={e => setNotes(e.target.value)}
-          rows={3}
-          placeholder="Anything worth remembering about this demo — takes, tempo drift, what still needs work…"
+          rows={5}
+          placeholder="## Section&#10;- bullet point&#10;- another point"
         />
       </div>
 

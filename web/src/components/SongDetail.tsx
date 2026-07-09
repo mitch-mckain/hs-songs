@@ -6,6 +6,8 @@ import { buildDiagramData, transposeChordName, transposeShape } from '@/lib/chor
 import ChordDiagram from '@/components/ChordDiagram'
 import WaveformPlayer from '@/components/WaveformPlayer'
 import dynamic from 'next/dynamic'
+import ReactMarkdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
 
 const AlphaTabViewer = dynamic(() => import('@/components/AlphaTabViewer'), { ssr: false })
 import type { Song, SongChord, SongStructureRow } from '@/types/database'
@@ -70,6 +72,10 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [notesEditing, setNotesEditing] = useState(false)
   const [notesSaving, setNotesSaving] = useState(false)
 
+  const [practiceFiles, setPracticeFiles] = useState<{ id: string; name: string }[]>([])
+  const [practiceError, setPracticeError] = useState<string | null>(null)
+  const [practiceOpen, setPracticeOpen] = useState(true)
+
   const [demoOpen, setDemoOpen] = useState(true)
   const [notesOpen, setNotesOpen] = useState(true)
   const [structureOpen, setStructureOpen] = useState(true)
@@ -94,6 +100,17 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
       })
       .catch(() => setFolderError('Failed to scan Drive folder — try signing out and back in'))
   }, [song.drive_folder_url])
+
+  useEffect(() => {
+    if (!song.practice_folder_url) return
+    fetch(`/api/drive/practice?url=${encodeURIComponent(song.practice_folder_url)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) setPracticeError(data.error.includes('access token') ? 'Google session expired.' : data.error)
+        else setPracticeFiles(data.audioFiles ?? [])
+      })
+      .catch(() => setPracticeError('Failed to load practice recordings'))
+  }, [song.practice_folder_url])
 
   useEffect(() => {
     if (!song.lyrics_doc_url) return
@@ -288,6 +305,27 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
           )}
         </div>
 
+        {/* ── PRACTICE RECORDINGS ── */}
+        {(song.practice_folder_url) && (
+          <div style={{ marginBottom: 32 }}>
+            <SectionHeader title="Practice Recordings" open={practiceOpen} onToggle={() => setPracticeOpen(o => !o)} />
+            {practiceOpen && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {practiceError ? (
+                  <div style={{ fontSize: 13, color: '#946f00' }}>{practiceError}</div>
+                ) : practiceFiles.length === 0 ? (
+                  <div style={{ fontSize: 13, color: '#a4917a', fontStyle: 'italic' }}>No audio files found in practice folder.</div>
+                ) : practiceFiles.map(f => (
+                  <div key={f.id}>
+                    <div style={{ fontSize: 12, color: '#8f8f89', fontFamily: 'var(--font-mono), monospace', marginBottom: 6 }}>{f.name}</div>
+                    <WaveformPlayer songId={`practice-${f.id}`} songTitle={f.name} fileId={f.id} fileName={f.name} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── NOTES ── */}
         {(song.notes || isEditor) && (
           <div style={{ marginBottom: 32 }}>
@@ -320,16 +358,23 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
               ) : (
                 <div
                   onClick={() => isEditor && setNotesEditing(true)}
-                  style={{
-                    fontSize: 14.5, color: notesValue ? '#5f5e5b' : '#a4917a',
-                    lineHeight: 1.55, whiteSpace: 'pre-wrap',
-                    cursor: isEditor ? 'text' : 'default',
-                    minHeight: isEditor ? 40 : undefined,
-                    padding: isEditor ? '6px 0' : undefined,
-                  }}
+                  style={{ cursor: isEditor ? 'text' : 'default', minHeight: isEditor ? 40 : undefined }}
                 >
-                  {notesValue || (isEditor ? 'Click to add notes…' : '')}
-                  {notesSaving && <span style={{ marginLeft: 8, fontSize: 12, color: '#a4917a' }}>Saving…</span>}
+                  {notesValue ? (
+                    <div style={{ fontSize: 14.5, lineHeight: 1.6, color: '#5f5e5b' }} className="song-notes-md">
+                      <ReactMarkdown remarkPlugins={[remarkBreaks]} components={{
+                        h2: ({children}) => <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#17181c', marginTop: 20, marginBottom: 6, paddingBottom: 4, borderBottom: '1px solid #e0d8ca' }}>{children}</div>,
+                        h3: ({children}) => <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 600, fontSize: 14, color: '#37352f', marginTop: 14, marginBottom: 4 }}>{children}</div>,
+                        ul: ({children}) => <ul style={{ margin: '4px 0 8px', paddingLeft: 20 }}>{children}</ul>,
+                        li: ({children}) => <li style={{ marginBottom: 3 }}>{children}</li>,
+                        p: ({children}) => <p style={{ margin: '0 0 8px' }}>{children}</p>,
+                        strong: ({children}) => <strong style={{ fontWeight: 700, color: '#37352f' }}>{children}</strong>,
+                      }}>{notesValue}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 14, color: '#a4917a', padding: '6px 0' }}>{isEditor ? 'Click to add notes…' : ''}</div>
+                  )}
+                  {notesSaving && <span style={{ fontSize: 12, color: '#a4917a' }}>Saving…</span>}
                 </div>
               )
             )}

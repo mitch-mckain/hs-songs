@@ -56,6 +56,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       version: song.version || null,
       tuning: song.tuning,
       drive_folder_url: song.drive_folder_url || null,
+      practice_folder_url: song.practice_folder_url || null,
       logic_url: song.logic_url || null,
       lyrics_doc_url: song.lyrics_doc_url || null,
       notes: song.notes || null,

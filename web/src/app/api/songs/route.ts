@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       time_signature: song.time_signature || null,
       version: song.version || null,
       drive_folder_url: song.drive_folder_url || null,
+      practice_folder_url: song.practice_folder_url || null,
       logic_url: song.logic_url || null,
       lyrics_doc_url: song.lyrics_doc_url || null,
       notes: song.notes || null,

@@ -14,6 +14,7 @@ export interface Song {
   time_signature: string | null
   version: string | null
   drive_folder_url: string | null
+  practice_folder_url: string | null
   logic_url: string | null
   lyrics_doc_url: string | null
   notes: string | null
