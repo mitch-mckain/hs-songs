@@ -9,7 +9,6 @@ import type { Song } from '@/types/database'
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   demo:     { bg: '#FBE3B8', color: '#8A5A16', label: 'Demo' },
   released: { bg: '#DCEEBF', color: '#4C7A20', label: 'Released' },
-  retired:  { bg: '#E6E1D4', color: '#6b665a', label: 'Retired' },
 }
 
 function CassetteIcon({ spinning }: { spinning: boolean }) {
@@ -45,7 +44,7 @@ function CassetteIcon({ spinning }: { spinning: boolean }) {
         <line x1="60.2" y1="65.2" x2="63.8" y2="68.8" stroke="#555" strokeWidth="1.5"/>
         <line x1="63.8" y1="53.2" x2="60.2" y2="56.8" stroke="#555" strokeWidth="1.5"/>
         <line x1="51.8" y1="65.2" x2="48.2" y2="68.8" stroke="#555" strokeWidth="1.5"/>
-        <circle cx="56" cy="61" r="5" fill="#c2ab8a"/>
+        <circle cx="56" cy="61" r="5" fill="#c7c3ba"/>
         <circle cx="56" cy="61" r="2.2" fill="#1e1c19"/>
       </g>
       {/* Right reel */}
@@ -60,7 +59,7 @@ function CassetteIcon({ spinning }: { spinning: boolean }) {
         <line x1="108.2" y1="65.2" x2="111.8" y2="68.8" stroke="#555" strokeWidth="1.5"/>
         <line x1="111.8" y1="53.2" x2="108.2" y2="56.8" stroke="#555" strokeWidth="1.5"/>
         <line x1="99.8" y1="65.2" x2="96.2" y2="68.8" stroke="#555" strokeWidth="1.5"/>
-        <circle cx="104" cy="61" r="5" fill="#c2ab8a"/>
+        <circle cx="104" cy="61" r="5" fill="#c7c3ba"/>
         <circle cx="104" cy="61" r="2.2" fill="#1e1c19"/>
       </g>
       {/* Corner screws */}
@@ -86,7 +85,7 @@ export default function LibraryView({ songs, role }: Props) {
 
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'demo' | 'released' | 'retired'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'demo' | 'released'>('all')
 
   async function signOut() {
     const supabase = createClient()
@@ -148,16 +147,16 @@ export default function LibraryView({ songs, role }: Props) {
   Object.entries(byAlbum).forEach(([album, songs]) => sections.push({ heading: album, songs }))
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFFFF9', paddingBottom: 96 }}>
+    <div style={{ minHeight: '100vh', background: '#fbfaf7', paddingBottom: 96 }}>
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '48px 20px 60px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 40, flexWrap: 'wrap' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#17181c' }}>Band Database</span>
-              <span style={{ fontSize: 10, color: '#a4917a' }}>Heavy Sweater</span>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#8a8790' }}>Band Database</span>
+              <span style={{ fontSize: 10, color: '#b8b5be' }}>Heavy Sweater</span>
             </div>
-            <h1 style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 'clamp(26px,7vw,38px)', color: '#17181c', letterSpacing: '-0.04em', margin: 0 }}>
+            <h1 style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 800, fontSize: 'clamp(26px,7vw,38px)', color: '#1a1a1f', letterSpacing: '-0.04em', margin: 0 }}>
               Song Dashboard
             </h1>
           </div>
@@ -165,14 +164,14 @@ export default function LibraryView({ songs, role }: Props) {
             {isEditor && (
               <button
                 onClick={() => router.push('/songs/new')}
-                style={{ fontSize: 13, fontWeight: 600, padding: '7px 12px', borderRadius: 2, background: '#17181c', color: '#fff', border: 'none', cursor: 'pointer' }}
+                style={{ fontSize: 13, fontWeight: 700, padding: '7px 14px', borderRadius: 8, background: '#1a1a1f', color: '#fff', border: 'none', cursor: 'pointer' }}
               >
                 + New song
               </button>
             )}
             <button
               onClick={signOut}
-              style={{ fontSize: 12, fontWeight: 600, padding: '7px 12px', borderRadius: 2, background: 'none', color: '#8f8f89', border: '1px solid #17181c', cursor: 'pointer' }}
+              style={{ fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 8, background: '#ffffff', color: '#4a4850', border: '1px solid #e3e0d8', cursor: 'pointer' }}
             >
               Sign out
             </button>
@@ -185,13 +184,13 @@ export default function LibraryView({ songs, role }: Props) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search songs…"
-            style={{ flex: '1 1 180px', fontFamily: 'inherit', fontSize: 13, padding: '7px 10px', border: '1px solid #17181c', borderRadius: 2, background: '#FFFFF9', color: '#17181c', outline: 'none' }}
+            style={{ flex: '1 1 180px', fontFamily: 'inherit', fontSize: 13, padding: '7px 12px', border: '1px solid #e3e0d8', borderRadius: 8, background: '#ffffff', color: '#1a1a1f', outline: 'none' }}
           />
-          {(['all', 'demo', 'released', 'retired'] as const).map(f => (
+          {(['all', 'demo', 'released'] as const).map(f => (
             <button
               key={f}
               onClick={() => setStatusFilter(f)}
-              style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 600, padding: '6px 12px', borderRadius: 2, border: '1px solid #17181c', background: statusFilter === f ? '#17181c' : 'none', color: statusFilter === f ? '#fff' : '#5f5e5b', cursor: 'pointer', textTransform: 'capitalize' }}
+              style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 8, border: '1px solid', borderColor: statusFilter === f ? '#1a1a1f' : '#e3e0d8', background: statusFilter === f ? '#1a1a1f' : '#ffffff', color: statusFilter === f ? '#fff' : '#4a4850', cursor: 'pointer', textTransform: 'capitalize' }}
             >
               {f === 'all' ? 'All' : STATUS_STYLES[f].label}
             </button>
@@ -206,7 +205,7 @@ export default function LibraryView({ songs, role }: Props) {
         ) : (
           sections.map(section => (
             <div key={section.heading} style={{ marginBottom: 36 }}>
-              <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 600, fontSize: 12, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#17181c', paddingBottom: 10, borderBottom: '1px solid #17181c' }}>
+              <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#8a8790', paddingBottom: 10, borderBottom: '1px solid #e3e0d8' }}>
                 {section.heading}
               </div>
               <div>
@@ -220,9 +219,9 @@ export default function LibraryView({ songs, role }: Props) {
                     <div
                       key={song.id}
                       onClick={() => router.push(`/songs/${song.id}`)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 4px', cursor: 'pointer', borderBottom: '1px solid #e0d8ca', background: 'transparent', transition: 'background 0.1s' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#F5F1E4')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 8px', cursor: 'pointer', borderBottom: '1px solid #e3e0d8', background: 'transparent', transition: 'background 0.1s', borderRadius: 8 }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#f5f3ee'; e.currentTarget.style.borderRadius = '8px' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                     >
                       {/* Album art */}
                       <div style={{ flexShrink: 0, width: 96, height: 67 }} onClick={e => e.stopPropagation()}>
@@ -237,8 +236,8 @@ export default function LibraryView({ songs, role }: Props) {
                           width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           border: 'none',
-                          background: hasFolder ? '#17181c' : '#ECE4D2',
-                          color: hasFolder ? '#fff' : '#a4917a',
+                          background: hasFolder ? '#1a1a1f' : '#f5f3ee',
+                          color: hasFolder ? '#fff' : '#b8b5be',
                           cursor: hasFolder && !isLoading ? 'pointer' : 'not-allowed',
                         }}
                         title={hasFolder ? undefined : 'No Drive folder linked'}
@@ -260,22 +259,23 @@ export default function LibraryView({ songs, role }: Props) {
                       {/* Info */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                          <span style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#17181c', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</span>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 1, fontSize: 12, fontWeight: 600, padding: '3px 8px', borderRadius: 2, background: status.bg, color: status.color, border: `1px solid ${status.color}`, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          <span style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a1f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, lineHeight: 1, fontSize: 12, fontWeight: 600, padding: '4px 10px 4px 8px', borderRadius: 20, background: status.bg, color: status.color, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: status.color, flexShrink: 0 }} />
                             {status.label}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', gap: 14, fontSize: 11, color: '#8f8f89', flexWrap: 'wrap', fontFamily: 'var(--font-mono), monospace' }}>
-                          <span>KEY <b style={{ color: '#5f5e5b' }}>{song.key ?? '—'}</b></span>
-                          <span>BPM <b style={{ color: '#5f5e5b' }}>{song.bpm ?? '—'}</b></span>
-                          <span>TUNING <b style={{ color: '#5f5e5b' }}>{song.tuning}</b></span>
+                        <div style={{ display: 'flex', gap: 14, fontSize: 11, color: '#8a8790', flexWrap: 'wrap', fontFamily: 'var(--font-mono), monospace' }}>
+                          <span>KEY <b style={{ color: '#4a4850' }}>{song.key ?? '—'}</b></span>
+                          <span>BPM <b style={{ color: '#4a4850' }}>{song.bpm ?? '—'}</b></span>
+                          <span>TUNING <b style={{ color: '#4a4850' }}>{song.tuning}</b></span>
                         </div>
                       </div>
 
                       {/* Updated date */}
-                      <div style={{ fontSize: 11, color: '#c2ab8a', flexShrink: 0, whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono), monospace' }}>
+                      <div style={{ fontSize: 11, color: '#b8b5be', flexShrink: 0, whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono), monospace' }}>
                         <div>{relativeTime(song.last_updated)}</div>
-                        <div style={{ fontSize: 10, color: '#d6cab0', marginTop: 2 }}>{new Date(song.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                        <div style={{ fontSize: 10, color: '#c9c6bc', marginTop: 2 }}>{new Date(song.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                       </div>
                     </div>
                   )

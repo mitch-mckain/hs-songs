@@ -161,10 +161,11 @@ export default function AlphaTabViewer({ fileId, title }: Props) {
               key={track.index}
               onClick={() => switchTrack(track.index)}
               style={{
-                fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
-                padding: '6px 12px', borderRadius: 2, cursor: 'pointer', border: 'none',
-                background: activeTrack === track.index ? '#17181c' : '#ECE4D2',
-                color: activeTrack === track.index ? '#fff' : '#5f5e5b',
+                fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+                padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
+                border: `1px solid ${activeTrack === track.index ? '#1a1a1f' : '#e3e0d8'}`,
+                background: activeTrack === track.index ? '#1a1a1f' : '#ffffff',
+                color: activeTrack === track.index ? '#fff' : '#4a4850',
               }}
             >
               {track.name}

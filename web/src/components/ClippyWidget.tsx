@@ -13,8 +13,9 @@ function pinElement(el: HTMLElement) {
   const h = el.offsetHeight || 93
   el.style.left = (window.innerWidth - w - 16) + 'px'
   el.style.top = (window.innerHeight - h - 16) + 'px'
-  el.style.transform = 'scale(0.65)'
+  el.style.transform = 'scale(0.9)'
   el.style.transformOrigin = 'bottom right'
+  el.style.cursor = 'pointer'
 }
 
 export default function ClippyWidget() {
@@ -43,12 +44,20 @@ export default function ClippyWidget() {
       clippy.play(anim)
     }, 8000)
 
+    // Click to play a random animation
+    function handleClick() {
+      const anim = ANIMATIONS[Math.floor(Math.random() * ANIMATIONS.length)]
+      clippy!.play(anim)
+    }
+    el.addEventListener('click', handleClick)
+
     window.addEventListener('resize', () => pinElement(el))
 
     return () => {
       clearTimeout(t)
       clearInterval(interval)
       observer.disconnect()
+      el.removeEventListener('click', handleClick)
     }
   }, [clippy])
 

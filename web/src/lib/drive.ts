@@ -48,6 +48,17 @@ export function isGoogleDoc(file: DriveFile): boolean {
   return file.mimeType === 'application/vnd.google-apps.document'
 }
 
+export function isFolder(file: DriveFile): boolean {
+  return file.mimeType === 'application/vnd.google-apps.folder'
+}
+
+const PRACTICE_FOLDER_NAMES = ['practice', 'recordings', 'takes', 'room recordings', 'room', 'rehearsal']
+
+export function isPracticeFolder(file: DriveFile): boolean {
+  const nameLower = file.name.toLowerCase()
+  return isFolder(file) && PRACTICE_FOLDER_NAMES.some(n => nameLower.includes(n))
+}
+
 /**
  * List files in a Drive folder using the Drive API v3.
  */

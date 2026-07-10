@@ -6,8 +6,7 @@ import { buildDiagramData, transposeChordName, transposeShape } from '@/lib/chor
 import ChordDiagram from '@/components/ChordDiagram'
 import WaveformPlayer from '@/components/WaveformPlayer'
 import dynamic from 'next/dynamic'
-import ReactMarkdown from 'react-markdown'
-import remarkBreaks from 'remark-breaks'
+import NotesEditor from '@/components/NotesEditor'
 
 const AlphaTabViewer = dynamic(() => import('@/components/AlphaTabViewer'), { ssr: false })
 import type { Song, SongChord, SongStructureRow } from '@/types/database'
@@ -15,7 +14,6 @@ import type { Song, SongChord, SongStructureRow } from '@/types/database'
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   demo:     { bg: '#FBE3B8', color: '#8A5A16', label: 'Demo' },
   released: { bg: '#DCEEBF', color: '#4C7A20', label: 'Released' },
-  retired:  { bg: '#E6E1D4', color: '#6b665a', label: 'Retired' },
 }
 
 const PILL_COLORS: Record<string, { bg: string; color: string }> = {
@@ -34,23 +32,16 @@ interface Props {
   role: 'editor' | 'viewer'
 }
 
-function SectionHeader({ title, open, onToggle, showBorder = true }: { title: string; open: boolean; onToggle: () => void; showBorder?: boolean }) {
+function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
   return (
     <div
       onClick={onToggle}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-        borderBottom: showBorder ? '1px solid #17181c' : 'none',
-        paddingBottom: showBorder ? 10 : 0,
-        marginBottom: showBorder && open ? 18 : 0,
-      }}
+      style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: open ? 18 : 0 }}
     >
-      <span style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 20, color: '#17181c', textTransform: 'uppercase', letterSpacing: '0.01em' }}>{title}</span>
-      <span style={{
-        fontSize: 16, color: '#17181c', fontWeight: 700, display: 'inline-block',
-        transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
-        transition: 'transform 0.15s', lineHeight: 1,
-      }}>▸</span>
+      <span style={{ width: 8, height: 8, borderRadius: 2, background: '#1a1a1f', flexShrink: 0 }} />
+      <span style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a1f', textTransform: 'uppercase', letterSpacing: '0.01em', lineHeight: 1.3 }}>{title}</span>
+      <div style={{ flex: 1, height: 1, background: '#e3e0d8' }} />
+      <span style={{ fontSize: 12, color: '#8a8790', display: 'inline-block', transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', lineHeight: 1 }}>▸</span>
     </div>
   )
 }
@@ -62,6 +53,9 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
 
   const [audioFile, setAudioFile] = useState<{ id: string; name: string } | null>(null)
   const [gpFile, setGpFile] = useState<{ id: string; name: string } | null>(null)
+  const [logicFile, setLogicFile] = useState<{ url: string } | null>(null)
+  const [docFile, setDocFile] = useState<{ url: string } | null>(null)
+  const [practiceFiles, setPracticeFiles] = useState<{ id: string; name: string }[]>([])
   const [folderError, setFolderError] = useState<string | null>(null)
 
   const [lyrics, setLyrics] = useState<string | null>(null)
@@ -71,10 +65,6 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [notesValue, setNotesValue] = useState(song.notes ?? '')
   const [notesEditing, setNotesEditing] = useState(false)
   const [notesSaving, setNotesSaving] = useState(false)
-
-  const [practiceFiles, setPracticeFiles] = useState<{ id: string; name: string }[]>([])
-  const [practiceError, setPracticeError] = useState<string | null>(null)
-  const [practiceOpen, setPracticeOpen] = useState(true)
 
   const [demoOpen, setDemoOpen] = useState(true)
   const [notesOpen, setNotesOpen] = useState(true)
@@ -86,36 +76,30 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [chordsOpen, setChordsOpen] = useState(true)
   const [riffsOpen, setRiffsOpen] = useState(true)
   const [lyricsOpen, setLyricsOpen] = useState(true)
+  const [expandedChord, setExpandedChord] = useState<{ name: string; diagram: ReturnType<typeof buildDiagramData> } | null>(null)
 
   useEffect(() => {
     if (!song.drive_folder_url) return
     fetch(`/api/drive/folder?url=${encodeURIComponent(song.drive_folder_url)}`)
       .then(r => r.json())
       .then(data => {
-        if (data.error) setFolderError(data.error.includes('access token') ? 'Google session expired — sign out and sign back in to refresh it.' : data.error)
-        else {
+        if (data.error) {
+          setFolderError(data.error.includes('access token') ? 'Google session expired — sign out and sign back in to refresh it.' : data.error)
+        } else {
           setAudioFile(data.audioFile ?? null)
           setGpFile(data.gpFile ?? null)
+          setLogicFile(data.logicFile ?? null)
+          setDocFile(data.docFile ?? null)
+          setPracticeFiles(data.practiceFiles ?? [])
         }
       })
       .catch(() => setFolderError('Failed to scan Drive folder — try signing out and back in'))
   }, [song.drive_folder_url])
 
   useEffect(() => {
-    if (!song.practice_folder_url) return
-    fetch(`/api/drive/practice?url=${encodeURIComponent(song.practice_folder_url)}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) setPracticeError(data.error.includes('access token') ? 'Google session expired.' : data.error)
-        else setPracticeFiles(data.audioFiles ?? [])
-      })
-      .catch(() => setPracticeError('Failed to load practice recordings'))
-  }, [song.practice_folder_url])
-
-  useEffect(() => {
-    if (!song.lyrics_doc_url) return
+    if (!docFile) return
     setLyricsLoading(true)
-    fetch(`/api/lyrics?url=${encodeURIComponent(song.lyrics_doc_url)}`)
+    fetch(`/api/lyrics?url=${encodeURIComponent(docFile.url)}`)
       .then(r => r.json())
       .then(data => {
         if (data.error) setLyricsError(data.error)
@@ -123,7 +107,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
       })
       .catch(() => setLyricsError('Failed to load lyrics'))
       .finally(() => setLyricsLoading(false))
-  }, [song.lyrics_doc_url])
+  }, [docFile])
 
   // Metronome
   function toggleMetronome() {
@@ -138,21 +122,25 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
     }
     const bpm = parseFloat(song.bpm ?? '0')
     if (!bpm) return
+    const beatsPerMeasure = parseInt(song.time_signature?.split('/')[0] ?? '4') || 4
     const ctx = new AudioContext()
     const interval = 60 / bpm
     let nextTick = ctx.currentTime + 0.05
+    let beatIndex = 0
     function schedule() {
       while (nextTick < ctx.currentTime + 0.25) {
+        const isAccent = beatIndex % beatsPerMeasure === 0
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
         osc.connect(gain)
         gain.connect(ctx.destination)
-        osc.frequency.value = 880
-        gain.gain.setValueAtTime(0.4, nextTick)
+        osc.frequency.value = isAccent ? 1320 : 880
+        gain.gain.setValueAtTime(isAccent ? 0.5 : 0.3, nextTick)
         gain.gain.exponentialRampToValueAtTime(0.001, nextTick + 0.04)
         osc.start(nextTick)
         osc.stop(nextTick + 0.05)
         nextTick += interval
+        beatIndex++
       }
       metronomeRef.current = { ctx, timerId: setTimeout(schedule, 100) }
     }
@@ -172,6 +160,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === 'Escape') { setExpandedChord(null); return }
       if (e.key === 'c' || e.key === 'C') {
         setCollapsedRows(prev => {
           const allCollapsed = structureRows.every(r => prev.has(r.id))
@@ -193,24 +182,24 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFFFF9', paddingBottom: 80 }}>
+    <>
+    <div style={{ minHeight: '100vh', background: '#fbfaf7', paddingBottom: 80 }}>
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px 60px' }}>
 
         {/* Back + Edit */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <button
             onClick={() => router.push('/')}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: '6px 0', fontWeight: 600, fontSize: 12, color: '#8f8f89', cursor: 'pointer', letterSpacing: '0.01em' }}
+            style={{ width: 36, height: 36, borderRadius: '50%', background: '#ffffff', border: '1px solid #e3e0d8', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }}
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#4a4850" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 2L4 7l5 5"/>
             </svg>
-            Song Dashboard
           </button>
           {isEditor && (
             <button
               onClick={() => router.push(`/songs/${song.id}/edit`)}
-              style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 2, cursor: 'pointer', background: 'none', color: '#37352f', border: '1px solid #17181c' }}
+              style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer', background: '#ffffff', color: '#4a4850', border: '1px solid #e3e0d8', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
             >
               Edit song
             </button>
@@ -219,31 +208,32 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
 
         {/* Title + status + date */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-            <h1 style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 'clamp(26px,7vw,38px)', color: '#17181c', letterSpacing: '-0.04em', margin: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <h1 style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 800, fontSize: 'clamp(32px,8vw,48px)', color: '#1a1a1f', letterSpacing: '-0.04em', margin: 0 }}>
               {song.title}
             </h1>
-            <span style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 1, fontSize: 12, fontWeight: 600, padding: '4px 9px', borderRadius: 2, background: status.bg, color: status.color, border: `1px solid ${status.color}` }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, lineHeight: 1, fontSize: 12, fontWeight: 600, padding: '6px 12px 6px 9px', borderRadius: 20, background: status.bg, color: status.color }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: status.color, flexShrink: 0 }} />
               {status.label}
             </span>
           </div>
-          <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11.5, color: '#c2ab8a' }}>
+          <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11, color: '#b8b5be', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Updated {new Date(song.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </div>
         </div>
 
         {/* Metadata grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', borderTop: '1px solid #17181c', borderLeft: '1px solid #17181c', borderBottom: '2px solid #17181c', marginBottom: 40 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 1, background: '#e3e0d8', borderRadius: 10, overflow: 'hidden', marginBottom: 40, boxShadow: '0 4px 20px rgba(0,0,0,0.10)' }}>
           {metaFields.map(f => (
-            <div key={f.label} style={{ padding: '12px 14px', borderRight: '1px solid #17181c' }}>
-              <div style={{ fontSize: 11, color: '#8f8f89', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 5, fontWeight: 600 }}>{f.label}</div>
+            <div key={f.label} style={{ padding: '14px 15px', background: '#ffffff' }}>
+              <div style={{ fontSize: 10, color: '#8a8790', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>{f.label}</div>
               {f.label === 'BPM' && song.bpm ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 600, fontSize: 17, color: '#17181c' }}>{f.value}</span>
+                  <span style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 700, fontSize: 17, color: '#1a1a1f' }}>{f.value}</span>
                   <button
                     onClick={toggleMetronome}
                     title={metronomePlaying ? 'Stop metronome' : 'Start metronome'}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: metronomePlaying ? '#17181c' : '#c2ab8a', flexShrink: 0 }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: metronomePlaying ? '#1a1a1f' : '#8a8790', flexShrink: 0 }}
                   >
                     <svg width="16" height="20" viewBox="0 0 16 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
                       {/* Body trapezoid */}
@@ -260,7 +250,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
                   </button>
                 </div>
               ) : (
-                <div style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 600, fontSize: 17, color: '#17181c' }}>{f.value}</div>
+                <div style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 700, fontSize: 17, color: '#1a1a1f' }}>{f.value}</div>
               )}
             </div>
           ))}
@@ -268,63 +258,73 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
 
         {/* ── DEMO ── */}
         <div style={{ marginBottom: 32 }}>
-          <SectionHeader title="Demo" open={demoOpen} onToggle={() => setDemoOpen(o => !o)} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: demoOpen ? 18 : 0 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: '#1a1a1f', flexShrink: 0 }} />
+            <span
+              onClick={() => setDemoOpen(o => !o)}
+              style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a1f', textTransform: 'uppercase', letterSpacing: '0.01em', lineHeight: 1.3, cursor: 'pointer', flexShrink: 0 }}
+            >Demo</span>
+            <div style={{ flex: 1, height: 1, background: '#e3e0d8', cursor: 'pointer' }} onClick={() => setDemoOpen(o => !o)} />
+            {logicFile && (
+              <a
+                href={logicFile.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#4a4850', textDecoration: 'none', border: '1px solid #e3e0d8', borderRadius: 8, padding: '5px 10px', flexShrink: 0 }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24"><rect width="24" height="24" rx="2" fill="#1a1a1f"/><path d="M8 8h8v8H8z" fill="none" stroke="#fff" strokeWidth="1.4"/></svg>
+                Logic project <span style={{ fontSize: 11, color: '#8a8790' }}>↗</span>
+              </a>
+            )}
+            <span
+              onClick={() => setDemoOpen(o => !o)}
+              style={{ fontSize: 12, color: '#8a8790', display: 'inline-block', transform: demoOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}
+            >▸</span>
+          </div>
           {demoOpen && (
-            <div>
-              {audioFile ? (
-                <WaveformPlayer
-                  songId={song.id}
-                  songTitle={song.title}
-                  fileId={audioFile.id}
-                  fileName={audioFile.name}
-                  logicUrl={song.logic_url ?? undefined}
-                />
-              ) : (
-                <div>
-                  {song.logic_url && (
-                    <a
-                      href={song.logic_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#37352f', textDecoration: 'none', border: '1px solid #17181c', borderRadius: 2, padding: '5px 10px', marginBottom: 12 }}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24"><rect width="24" height="24" rx="2" fill="#17181c"/><path d="M8 8h8v8H8z" fill="none" stroke="#fff" strokeWidth="1.4"/></svg>
-                      Logic project <span style={{ fontSize: 11, color: '#8f8f89' }}>↗</span>
-                    </a>
-                  )}
-                  {folderError ? (
-                    <div style={{ fontSize: 13, color: '#8f8f89', fontStyle: 'italic' }}>{folderError}</div>
-                  ) : song.drive_folder_url ? (
-                    <div style={{ fontSize: 13, color: '#8f8f89', fontStyle: 'italic' }}>Scanning Drive folder…</div>
-                  ) : (
-                    <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>No Drive folder linked yet — add one in Edit song.</div>
-                  )}
+            <div style={{ background: '#ffffff', border: '1px solid #e3e0d8', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div style={{ padding: '16px 18px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#8a8790', marginBottom: 12 }}>Logic Demo</div>
+                {audioFile ? (
+                  <WaveformPlayer
+                    songId={song.id}
+                    songTitle={song.title}
+                    fileId={audioFile.id}
+                    fileName={audioFile.name}
+                  />
+                ) : (
+                  <div>
+                    {folderError ? (
+                      <div style={{ fontSize: 13, color: '#8a8790', fontStyle: 'italic' }}>{folderError}</div>
+                    ) : song.drive_folder_url ? (
+                      <div style={{ fontSize: 13, color: '#8a8790', fontStyle: 'italic' }}>Scanning Drive folder…</div>
+                    ) : (
+                      <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8a8790' }}>No Drive folder linked yet — add one in Edit song.</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Practice Recordings sub-section */}
+              {practiceFiles.length > 0 && (
+                <div style={{ borderTop: '1px solid #e3e0d8', padding: '14px 18px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#8a8790', marginBottom: 12 }}>Practice Recordings</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {practiceFiles.length === 0 ? (
+                      <div style={{ fontSize: 13, color: '#8a8790', fontStyle: 'italic' }}>No audio files found in practice folder.</div>
+                    ) : practiceFiles.map(f => (
+                      <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <WaveformPlayer songId={`practice-${f.id}`} songTitle={f.name} fileId={f.id} fileName={f.name} compact />
+                        <div style={{ fontSize: 11, color: '#8a8790', fontFamily: 'var(--font-mono), monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           )}
         </div>
-
-        {/* ── PRACTICE RECORDINGS ── */}
-        {(song.practice_folder_url) && (
-          <div style={{ marginBottom: 32 }}>
-            <SectionHeader title="Practice Recordings" open={practiceOpen} onToggle={() => setPracticeOpen(o => !o)} />
-            {practiceOpen && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {practiceError ? (
-                  <div style={{ fontSize: 13, color: '#946f00' }}>{practiceError}</div>
-                ) : practiceFiles.length === 0 ? (
-                  <div style={{ fontSize: 13, color: '#a4917a', fontStyle: 'italic' }}>No audio files found in practice folder.</div>
-                ) : practiceFiles.map(f => (
-                  <div key={f.id}>
-                    <div style={{ fontSize: 12, color: '#8f8f89', fontFamily: 'var(--font-mono), monospace', marginBottom: 6 }}>{f.name}</div>
-                    <WaveformPlayer songId={`practice-${f.id}`} songTitle={f.name} fileId={f.id} fileName={f.name} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* ── NOTES ── */}
         {(song.notes || isEditor) && (
@@ -332,10 +332,9 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
             <SectionHeader title="Notes" open={notesOpen} onToggle={() => setNotesOpen(o => !o)} />
             {notesOpen && (
               notesEditing ? (
-                <textarea
-                  autoFocus
+                <NotesEditor
                   value={notesValue}
-                  onChange={e => setNotesValue(e.target.value)}
+                  onChange={setNotesValue}
                   onBlur={async () => {
                     setNotesEditing(false)
                     if (notesValue === (song.notes ?? '')) return
@@ -347,30 +346,19 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
                     })
                     setNotesSaving(false)
                   }}
-                  style={{
-                    width: '100%', minHeight: 120, resize: 'vertical',
-                    fontSize: 14.5, color: '#5f5e5b', lineHeight: 1.55,
-                    fontFamily: 'inherit', background: '#faf7ee',
-                    border: '1px solid #17181c', borderRadius: 2,
-                    padding: '10px 12px', outline: 'none', boxSizing: 'border-box',
-                  }}
+                  minHeight={120}
                 />
               ) : (
                 <div
                   onClick={() => isEditor && setNotesEditing(true)}
-                  style={{ cursor: isEditor ? 'text' : 'default', minHeight: isEditor ? 40 : undefined }}
+                  style={{ cursor: isEditor ? 'text' : 'default', minHeight: isEditor ? 40 : undefined, borderLeft: '2px solid #e3e0d8', paddingLeft: 14 }}
                 >
                   {notesValue ? (
-                    <div style={{ fontSize: 14.5, lineHeight: 1.6, color: '#5f5e5b' }} className="song-notes-md">
-                      <ReactMarkdown remarkPlugins={[remarkBreaks]} components={{
-                        h2: ({children}) => <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#17181c', marginTop: 20, marginBottom: 6, paddingBottom: 4, borderBottom: '1px solid #e0d8ca' }}>{children}</div>,
-                        h3: ({children}) => <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 600, fontSize: 14, color: '#37352f', marginTop: 14, marginBottom: 4 }}>{children}</div>,
-                        ul: ({children}) => <ul style={{ margin: '4px 0 8px', paddingLeft: 20 }}>{children}</ul>,
-                        li: ({children}) => <li style={{ marginBottom: 3 }}>{children}</li>,
-                        p: ({children}) => <p style={{ margin: '0 0 8px' }}>{children}</p>,
-                        strong: ({children}) => <strong style={{ fontWeight: 700, color: '#37352f' }}>{children}</strong>,
-                      }}>{notesValue}</ReactMarkdown>
-                    </div>
+                    <div
+                      className="song-notes"
+                      style={{ fontSize: 14.5, lineHeight: 1.6, color: '#4a4850' }}
+                      dangerouslySetInnerHTML={{ __html: notesValue }}
+                    />
                   ) : (
                     <div style={{ fontSize: 14, color: '#a4917a', padding: '6px 0' }}>{isEditor ? 'Click to add notes…' : ''}</div>
                   )}
@@ -386,26 +374,26 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
           <SectionHeader title="Chords" open={chordsOpen} onToggle={() => setChordsOpen(o => !o)} />
           {chordsOpen && (
             chords.length === 0 ? (
-              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89', paddingBottom: 8 }}>No chords added yet</div>
+              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8a8790', paddingBottom: 8 }}>No chords added yet</div>
             ) : (
               <div>
-                <div style={{ display: 'flex', gap: 24, overflowX: 'auto', paddingBottom: 12, marginBottom: 8 }}>
+                <div style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, marginBottom: 8, WebkitMaskImage: 'linear-gradient(to right, black 75%, transparent 100%)', maskImage: 'linear-gradient(to right, black 75%, transparent 100%)' }}>
                   {[...chords].sort((a, b) => a.position - b.position).map(chord => {
                     const diagram = buildDiagramData({ name: chord.name, strings: chord.strings as (number | 'x')[], barre: chord.barre }, 'large')
                     return (
-                      <div key={chord.id} style={{ flex: '0 0 auto', width: 96 }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-                          <div style={{ width: 96, height: 44, padding: '0 8px', borderRadius: 2, background: '#17181c', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', overflow: 'hidden', boxSizing: 'border-box', fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16 }}>
-                            {chord.name}
-                          </div>
+                      <div key={chord.id} onClick={() => setExpandedChord({ name: chord.name, diagram })} style={{ flex: '0 0 auto', width: 108, background: '#ffffff', border: '1px solid #e3e0d8', borderRadius: 10, padding: '12px 0 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', cursor: 'pointer' }}>
+                        <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a1f', textAlign: 'center' }}>
+                          {chord.name}
                         </div>
                         <ChordDiagram data={diagram} size="large" />
                       </div>
                     )
                   })}
                 </div>
+                </div>
                 {song.tuning && !['Std', 'Eb std'].includes(song.tuning) && (
-                  <div style={{ fontSize: 12.5, color: '#a4917a', marginBottom: 8 }}>
+                  <div style={{ fontSize: 12.5, color: '#8a8790', marginBottom: 8 }}>
                     Played in {song.tuning} tuning
                   </div>
                 )}
@@ -416,22 +404,29 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
 
         {/* ── STRUCTURE ── */}
         <div style={{ marginBottom: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', borderBottom: '1px solid #17181c', paddingBottom: 10, marginBottom: structureOpen ? 18 : 0 }}>
-            <SectionHeader title="Structure" open={structureOpen} onToggle={() => setStructureOpen(o => !o)} showBorder={false} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: structureOpen ? 18 : 0 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: '#1a1a1f', flexShrink: 0 }} />
+            <span
+              onClick={() => setStructureOpen(o => !o)}
+              style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a1f', textTransform: 'uppercase', letterSpacing: '0.01em', lineHeight: 1.3, cursor: 'pointer', flexShrink: 0 }}
+            >Structure</span>
+            <div style={{ flex: 1, height: 1, background: '#e3e0d8', cursor: 'pointer' }} onClick={() => setStructureOpen(o => !o)} />
             {structureOpen && structureRows.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 10, color: '#b6b5b2', fontFamily: 'var(--font-mono), monospace' }}>C to collapse all</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: 10, color: '#8f8f89', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 2 }}>Transpose</span>
-                  <button onClick={() => setTranspose(t => t - 1)} style={{ fontFamily: 'inherit', fontSize: 13, fontWeight: 700, width: 24, height: 24, border: '1px solid #c2ab8a', borderRadius: 2, background: 'none', color: '#5f5e5b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                  <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 12, fontWeight: 600, color: transpose === 0 ? '#b6b5b2' : '#17181c', minWidth: 28, textAlign: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                <span style={{ fontSize: 10, color: '#b8b5be', fontFamily: 'var(--font-mono), monospace' }}>C to collapse all</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #e3e0d8', borderRadius: 20, overflow: 'hidden' }}>
+                  <button onClick={() => setTranspose(t => t - 1)} style={{ fontFamily: 'inherit', fontSize: 14, fontWeight: 700, width: 26, height: 26, border: 'none', background: 'none', color: '#4a4850', cursor: 'pointer' }}>−</button>
+                  <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 12, fontWeight: 700, color: transpose === 0 ? '#b8b5be' : '#1a1a1f', minWidth: 30, textAlign: 'center' }}>
                     {transpose === 0 ? '0' : transpose > 0 ? `+${transpose}` : transpose}
                   </span>
-                  <button onClick={() => setTranspose(t => t + 1)} style={{ fontFamily: 'inherit', fontSize: 13, fontWeight: 700, width: 24, height: 24, border: '1px solid #c2ab8a', borderRadius: 2, background: 'none', color: '#5f5e5b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-                  {transpose !== 0 && <button onClick={() => setTranspose(0)} style={{ fontSize: 10, fontWeight: 600, border: 'none', background: 'none', color: '#a4917a', cursor: 'pointer', padding: '0 2px' }}>reset</button>}
+                  <button onClick={() => setTranspose(t => t + 1)} style={{ fontFamily: 'inherit', fontSize: 14, fontWeight: 700, width: 26, height: 26, border: 'none', background: 'none', color: '#4a4850', cursor: 'pointer' }}>+</button>
                 </div>
               </div>
             )}
+            <span
+              onClick={() => setStructureOpen(o => !o)}
+              style={{ fontSize: 12, color: '#8a8790', display: 'inline-block', transform: structureOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}
+            >▸</span>
           </div>
           {structureOpen && (
             structureRows.length === 0 ? (
@@ -440,98 +435,93 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
               (() => {
                 const chordById = new Map(chords.map(c => [c.id, c]))
                 const chordByName = new Map(chords.map(c => [c.name, c]))
-                // Look up by ID (new format) with name fallback for legacy data
                 const getChord = (ref: string) => chordById.get(ref) ?? chordByName.get(ref) ?? null
-                return [...structureRows]
-                  .sort((a, b) => a.position - b.position)
-                  .map(row => {
-                    const pill = PILL_COLORS[row.section_type] ?? PILL_COLORS.verse
-                    const chordProgression = row.chord_progression as string[]
-                    const isCollapsed = collapsedRows.has(row.id)
-                    const toggleRow = () => setCollapsedRows(prev => {
-                      const next = new Set(prev)
-                      next.has(row.id) ? next.delete(row.id) : next.add(row.id)
-                      return next
-                    })
-                    return (
-                      <div key={row.id} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 0', borderBottom: '1px solid #e0d8ca' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                          <div onClick={toggleRow} style={{ minWidth: 88, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 2, background: pill.bg, color: pill.color, border: `1px solid ${pill.color}`, flex: '0 0 auto', textTransform: 'uppercase', letterSpacing: '0.02em', cursor: 'pointer', opacity: isCollapsed ? 0.6 : 1 }}>
-                            {row.section_label || row.section_type}
-                          </div>
-                          {row.bar_count && (
-                            <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 12, color: '#a4917a', flex: '0 0 auto' }}>
-                              ×{row.bar_count}
-                            </div>
-                          )}
-                          {row.lyric_snippet && (
-                            <div style={{ fontSize: 14, color: '#5f5e5b', fontStyle: 'italic' }}>{row.lyric_snippet}</div>
-                          )}
-                        </div>
-                        {!isCollapsed && chordProgression[0] === '__SEE_TAB__' ? (
-                          <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 13, fontWeight: 600, color: '#a4917a', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                            see tab
-                          </div>
-                        ) : !isCollapsed && chordProgression[0] === '__SAME_AS__' ? (() => {
-                          const refLabel = chordProgression[1]
-                          const refRow = structureRows.find(r => (r.section_label || r.section_type) === refLabel && r.id !== row.id)
-                          const refProgression = (refRow?.chord_progression ?? []) as string[]
-                          return (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                              <div style={{ fontSize: 11, fontWeight: 600, color: '#a4917a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Same as {refLabel}</div>
-                              {refProgression.length > 0 && refProgression[0] !== '__SEE_TAB__' && (
-                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start', opacity: 0.7 }}>
-                                  {refProgression.map((ref, i) => {
-                                    const chord = getChord(ref)
-                                    const displayName = transposeChordName(chord?.name ?? ref, transpose)
-                                    const diagramChord = chord && transpose !== 0
-                                      ? { ...chord, strings: transposeShape(chord.strings as (number | 'x')[], transpose) }
-                                      : chord
-                                    return (
-                                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                                        {i > 0 && <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 18, color: '#a4917a', alignSelf: 'center', marginTop: -20 }}>→</span>}
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-                                          {diagramChord
-                                            ? <ChordDiagram data={buildDiagramData(diagramChord, 'small')} size="small" />
-                                            : <div style={{ width: 80, height: 100, background: '#f5f1e4', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 10, color: '#b6b5b2' }}>?</span></div>
-                                          }
-                                          <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 13, fontWeight: 600, color: '#fff', background: '#17181c', padding: '2px 8px', borderRadius: 2, marginTop: -10 }}>{displayName}</span>
-                                        </div>
-                                      </div>
-                                    )
-                                  })}
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[...structureRows]
+                      .sort((a, b) => a.position - b.position)
+                      .map(row => {
+                        const pill = PILL_COLORS[row.section_type] ?? PILL_COLORS.verse
+                        const chordProgression = row.chord_progression as string[]
+                        const isCollapsed = collapsedRows.has(row.id)
+                        const isSameAs = chordProgression[0] === '__SAME_AS__'
+                        const isSeeTab = chordProgression[0] === '__SEE_TAB__'
+                        const showChords = !isCollapsed && !isSeeTab && !isSameAs && chordProgression.length > 0
+                        const toggleRow = () => setCollapsedRows(prev => {
+                          const next = new Set(prev)
+                          next.has(row.id) ? next.delete(row.id) : next.add(row.id)
+                          return next
+                        })
+                        return (
+                          <div key={row.id} style={{ background: '#ffffff', border: '1px solid #e3e0d8', borderRadius: 10, padding: '16px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', opacity: isCollapsed ? 0.6 : 1 }}>
+                            {/* Row header */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: showChords ? 14 : 0 }}>
+                              <div onClick={toggleRow} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, fontFamily: 'var(--font-display), Archivo, sans-serif', fontSize: 12, fontWeight: 800, padding: '4px 10px', borderRadius: 6, background: pill.bg, color: pill.color, flex: '0 0 auto', textTransform: 'uppercase', letterSpacing: '0.03em', cursor: 'pointer' }}>
+                                {row.section_label || row.section_type}
+                              </div>
+                              {row.bar_count && (
+                                <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 12, color: '#8a8790', flex: '0 0 auto' }}>
+                                  ×{row.bar_count}
                                 </div>
                               )}
-                            </div>
-                          )
-                        })() : !isCollapsed && chordProgression.length > 0 && (
-                          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                            {chordProgression.map((ref, i) => {
-                              const chord = getChord(ref)
-                              const displayName = transposeChordName(chord?.name ?? ref, transpose)
-                              const diagramChord = chord && transpose !== 0
-                                ? { ...chord, strings: transposeShape(chord.strings as (number | 'x')[], transpose) }
-                                : chord
-                              return (
-                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                                  {i > 0 && <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 18, color: '#a4917a', alignSelf: 'center', marginTop: -20 }}>→</span>}
-                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-                                    {diagramChord
-                                      ? <ChordDiagram data={buildDiagramData(diagramChord, 'small')} size="small" />
-                                      : <div style={{ width: 80, height: 100, background: '#f5f1e4', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                          <span style={{ fontSize: 10, color: '#b6b5b2' }}>?</span>
-                                        </div>
-                                    }
-                                    <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 13, fontWeight: 600, color: '#fff', background: '#17181c', padding: '2px 8px', borderRadius: 2, marginTop: -10 }}>{displayName}</span>
-                                  </div>
+                              {isSameAs && (
+                                <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11, fontWeight: 700, color: '#4a4850', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                  Same as {chordProgression[1]}
                                 </div>
-                              )
-                            })}
+                              )}
+                              {isSeeTab && (
+                                <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11, fontWeight: 700, color: '#4a4850', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                  See tab →
+                                </div>
+                              )}
+                              {row.lyric_snippet && (
+                                <div style={{ fontSize: 13, fontWeight: 600, color: '#4a4850', fontStyle: 'italic' }}>"{row.lyric_snippet}"</div>
+                              )}
+                            </div>
+                            {/* Chord chips */}
+                            {showChords && (
+                              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                                {chordProgression.map((ref, i) => {
+                                  const chord = getChord(ref)
+                                  const displayName = transposeChordName(chord?.name ?? ref, transpose)
+                                  const diagramChord = chord && transpose !== 0
+                                    ? { ...chord, strings: transposeShape(chord.strings as (number | 'x')[], transpose) }
+                                    : chord
+                                  const d = diagramChord ? buildDiagramData(diagramChord, 'small') : null
+                                  const isLast = i === chordProgression.length - 1
+                                  return (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                      <div
+                                        onClick={() => d && setExpandedChord({ name: displayName, diagram: d })}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fbfaf7', border: '1px solid #e3e0d8', borderRadius: 8, padding: '8px 12px 8px 8px', cursor: d ? 'pointer' : 'default' }}
+                                      >
+                                        {d ? (
+                                          <svg width="52" height="64" viewBox="-18 0 122 128">
+                                            {d.fretLabel && <text x="-10" y="32" fontSize="22" fill="#8a8790" textAnchor="middle" fontFamily="-apple-system,sans-serif" dominantBaseline="central">{d.fretLabel}</text>}
+                                            {[10, 26.4, 42.8, 59.2, 75.6, 92].map(x => <line key={x} x1={x} y1="14" x2={x} y2="110" stroke="#c7c3ba" strokeWidth="1.3"/>)}
+                                            {d.isOpen ? <rect x="10" y="12" width="82" height="4" fill="#1a1a1f"/> : <line x1="10" y1="14" x2="92" y2="14" stroke="#8a8790" strokeWidth="1.3"/>}
+                                            {[38, 62, 86, 110].map(y => <line key={y} x1="10" y1={y} x2="92" y2={y} stroke="#e3e0d8" strokeWidth="1"/>)}
+                                            {d.barreRect && <rect x={d.barreRect.x} y={d.barreRect.y} width={d.barreRect.width} height={d.barreRect.height} rx="3" fill="#1a1a1f"/>}
+                                            {d.mutes.map(m => <text key={m.x} x={m.x} y="4" fontSize="20" fontWeight="700" fill="#8a8790" textAnchor="middle" dominantBaseline="central">×</text>)}
+                                            {d.opens.map(o => <circle key={o.x} cx={o.x} cy="4" r="4.5" fill="none" stroke="#1a1a1f" strokeWidth="1.5"/>)}
+                                            {d.dots.map((dot, j) => <circle key={j} cx={dot.x} cy={dot.y} r="9.5" fill="#1a1a1f"/>)}
+                                          </svg>
+                                        ) : (
+                                          <div style={{ width: 52, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 10, color: '#b8b5be' }}>?</span></div>
+                                        )}
+                                        <span style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontSize: 15, fontWeight: 700, color: '#1a1a1f' }}>{displayName}</span>
+                                      </div>
+                                      {!isLast && <span style={{ color: '#c7c3ba', fontSize: 16 }}>→</span>}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    )
-                  })
+                        )
+                      })}
+                  </div>
+                )
               })()
             )
           )}
@@ -541,16 +531,18 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         <div style={{ marginBottom: 32 }}>
           <SectionHeader title="Riffs & tab" open={riffsOpen} onToggle={() => setRiffsOpen(o => !o)} />
           {riffsOpen && (
-            <div style={{ border: '1px solid #17181c', borderRadius: 2, padding: 16, background: '#faf7ee' }}>
+            <div style={{ border: '1px solid #e3e0d8', borderRadius: 10, padding: 16, background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               {gpFile ? (
                 <AlphaTabViewer fileId={gpFile.id} title={song.title} />
               ) : song.drive_folder_url ? (
-                <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>
-                  No Guitar Pro file found in Drive folder. Add a .gp/.gp5/.gpx file to the folder.
+                <div style={{ minHeight: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 6 }}>
+                  <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 15, color: '#1a1a1f' }}>No Guitar Pro file found</div>
+                  <div style={{ fontSize: 13, color: '#b8b5be' }}>Add a .gp / .gp5 / .gpx file to the Drive folder</div>
                 </div>
               ) : (
-                <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>
-                  No Drive folder linked — add one in Edit song.
+                <div style={{ minHeight: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 6 }}>
+                  <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 15, color: '#1a1a1f' }}>No Drive folder linked</div>
+                  <div style={{ fontSize: 13, color: '#b8b5be' }}>Add a folder URL in Edit song</div>
                 </div>
               )}
             </div>
@@ -559,56 +551,80 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
 
         {/* ── LYRICS ── */}
         <div style={{ marginBottom: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #17181c', paddingBottom: 10, marginBottom: lyricsOpen ? 18 : 0, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: lyricsOpen ? 18 : 0 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: '#1a1a1f', flexShrink: 0 }} />
             <span
               onClick={() => setLyricsOpen(o => !o)}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1 }}
-            >
-              <span style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 20, color: '#17181c', textTransform: 'uppercase', letterSpacing: '0.01em' }}>Lyrics</span>
-              <span style={{
-                fontSize: 16, color: '#17181c', fontWeight: 700, display: 'inline-block',
-                transform: lyricsOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                transition: 'transform 0.15s', lineHeight: 1,
-              }}>▸</span>
-            </span>
-            {song.lyrics_doc_url && (
+              style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a1f', textTransform: 'uppercase', letterSpacing: '0.01em', lineHeight: 1.3, cursor: 'pointer', flexShrink: 0 }}
+            >Lyrics</span>
+            <div style={{ flex: 1, height: 1, background: '#e3e0d8', cursor: 'pointer' }} onClick={() => setLyricsOpen(o => !o)} />
+            {docFile && (
               <a
-                href={song.lyrics_doc_url}
+                href={docFile.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#37352f', textDecoration: 'none', border: '1px solid #17181c', borderRadius: 2, padding: '5px 10px', flexShrink: 0 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#4a4850', textDecoration: 'none', border: '1px solid #e3e0d8', borderRadius: 8, padding: '5px 10px', flexShrink: 0 }}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24"><rect width="24" height="24" rx="2" fill="#4285f4"/><rect x="6" y="6" width="12" height="1.6" fill="#fff"/><rect x="6" y="10" width="12" height="1.6" fill="#fff"/><rect x="6" y="14" width="8" height="1.6" fill="#fff"/></svg>
-                Lyrics doc <span style={{ fontSize: 11, color: '#8f8f89' }}>↗</span>
+                Lyrics doc <span style={{ fontSize: 11, color: '#8a8790' }}>↗</span>
               </a>
             )}
+            <span
+              onClick={() => setLyricsOpen(o => !o)}
+              style={{ fontSize: 12, color: '#8a8790', display: 'inline-block', transform: lyricsOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}
+            >▸</span>
           </div>
           {lyricsOpen && (
             lyricsLoading ? (
-              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>Loading lyrics…</div>
+              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8a8790' }}>Loading lyrics…</div>
             ) : lyricsError ? (
-              <div style={{ fontSize: 13, color: '#8f8f89' }}>
+              <div style={{ fontSize: 13, color: '#8a8790' }}>
                 {lyricsError}
-                {song.lyrics_doc_url && (
-                  <> — <a href={song.lyrics_doc_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1D6E8F' }}>Open doc ↗</a></>
+                {docFile && (
+                  <> — <a href={docFile.url} target="_blank" rel="noopener noreferrer" style={{ color: '#1D6E8F' }}>Open doc ↗</a></>
                 )}
               </div>
             ) : lyrics ? (
-              <div style={{ fontSize: 15, lineHeight: 1.8, color: '#37352f' }}>
+              <div style={{ background: '#ffffff', border: '1px solid #e3e0d8', borderRadius: 10, padding: '18px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', fontSize: 15, lineHeight: 1.8, color: '#1a1a1f' }}>
                 {lyrics.split('\n').map((line, i) => {
                   if (line.startsWith('\x02TITLE\x03')) {
-                    return <div key={i} style={{ fontWeight: 700, fontSize: 22, lineHeight: 1.3, marginBottom: 6 }}>{line.slice(7)}</div>
+                    return <div key={i} style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 22, lineHeight: 1.3, marginBottom: 6 }}>{line.slice(7)}</div>
                   }
                   return <div key={i} style={{ whiteSpace: 'pre-wrap' }}>{line || '\u00a0'}</div>
                 })}
               </div>
             ) : (
-              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8f8f89' }}>No lyrics doc linked yet</div>
+              <div style={{ fontSize: 13, fontStyle: 'italic', color: '#8a8790' }}>No lyrics doc linked yet</div>
             )
           )}
         </div>
 
       </div>
     </div>
+
+    {/* Chord expand modal */}
+    {expandedChord && (
+      <div
+        onClick={() => setExpandedChord(null)}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+      >
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{ background: '#ffffff', borderRadius: 16, padding: '32px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+        >
+          <div style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 800, fontSize: 36, color: '#1a1a1f', letterSpacing: '-0.02em' }}>{expandedChord.name}</div>
+          <div style={{ transform: 'scale(2.2)', transformOrigin: 'top center', marginBottom: 90 * 2.2 - 90 + 16 }}>
+            <ChordDiagram data={expandedChord.diagram} size="large" />
+          </div>
+          <button
+            onClick={() => setExpandedChord(null)}
+            style={{ marginTop: 4, fontSize: 12, color: '#8a8790', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            Press Esc or click outside to close
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

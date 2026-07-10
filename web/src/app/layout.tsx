@@ -1,23 +1,23 @@
 import type { Metadata } from 'next'
-import { IBM_Plex_Mono, Archivo, Work_Sans } from 'next/font/google'
+import { IBM_Plex_Mono, Archivo, IBM_Plex_Sans } from 'next/font/google'
 import './globals.css'
 import AppShell from '@/components/AppShell'
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-mono',
 })
 
 const archivo = Archivo({
   subsets: ['latin'],
-  weight: ['600', '700'],
+  weight: ['600', '700', '800'],
   variable: '--font-display',
 })
 
-const workSans = Work_Sans({
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  weight: ['500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-ui',
 })
 
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${ibmPlexMono.variable} ${archivo.variable} ${workSans.variable}`}>
+    <html lang="en" className={`${ibmPlexMono.variable} ${archivo.variable} ${ibmPlexSans.variable}`}>
       <body className="antialiased"><AppShell>{children}</AppShell></body>
     </html>
   )

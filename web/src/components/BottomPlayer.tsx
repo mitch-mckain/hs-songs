@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { usePlayer } from '@/context/PlayerContext'
 
 function formatTime(s: number): string {
@@ -11,8 +13,16 @@ function formatTime(s: number): string {
 
 export default function BottomPlayer() {
   const { track, playing, currentTime, duration, togglePlay, seek, close } = usePlayer()
+  const pathname = usePathname()
+
+  const isEditRoute = pathname?.includes('/edit') || pathname?.includes('/new')
+
+  useEffect(() => {
+    if (isEditRoute) close()
+  }, [isEditRoute])
 
   if (!track) return null
+  if (isEditRoute) return null
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
@@ -24,7 +34,7 @@ export default function BottomPlayer() {
   return (
     <div style={{
       position: 'fixed', left: 0, right: 0, bottom: 0,
-      background: '#faf7ee', borderTop: '1px solid #17181c',
+      background: '#ffffff', borderTop: '1px solid #e3e0d8', boxShadow: '0 -4px 16px rgba(0,0,0,0.05)',
       zIndex: 20,
     }}>
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -50,7 +60,7 @@ export default function BottomPlayer() {
           <div style={{ fontWeight: 700, fontSize: 13, color: '#17181c', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {track.songTitle}
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10.5, color: '#b6b5b2', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10.5, color: '#b8b5be', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {track.fileName}
           </div>
         </div>
@@ -60,20 +70,20 @@ export default function BottomPlayer() {
           onClick={handleProgressClick}
           style={{ flex: 1, height: 32, display: 'flex', alignItems: 'center', position: 'relative', cursor: 'pointer' }}
         >
-          <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: '#e0d8ca', borderRadius: 1 }} />
-          <div style={{ position: 'absolute', left: 0, height: 2, width: `${progress}%`, background: '#17181c', borderRadius: 1 }} />
-          <div style={{ position: 'absolute', left: `${progress}%`, width: 11, height: 11, marginLeft: -5.5, borderRadius: '50%', background: '#17181c' }} />
+          <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: '#e3e0d8', borderRadius: 1 }} />
+          <div style={{ position: 'absolute', left: 0, height: 2, width: `${progress}%`, background: '#1a1a1f', borderRadius: 1 }} />
+          <div style={{ position: 'absolute', left: `${progress}%`, width: 11, height: 11, marginLeft: -5.5, borderRadius: '50%', background: '#1a1a1f' }} />
         </div>
 
         {/* Time */}
-        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: '#b6b5b2', width: 76, whiteSpace: 'nowrap', textAlign: 'right', flex: '0 0 auto' }}>
+        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: '#b8b5be', width: 76, whiteSpace: 'nowrap', textAlign: 'right', flex: '0 0 auto' }}>
           {formatTime(currentTime)} / {formatTime(duration)}
         </div>
 
         {/* Close */}
         <button
           onClick={close}
-          style={{ background: 'none', border: 'none', color: '#b6b5b2', fontSize: 16, cursor: 'pointer', flex: '0 0 auto', padding: 4 }}
+          style={{ background: 'none', border: 'none', color: '#b8b5be', fontSize: 16, cursor: 'pointer', flex: '0 0 auto', padding: 4 }}
         >
           ×
         </button>

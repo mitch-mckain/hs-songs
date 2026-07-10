@@ -1,4 +1,4 @@
-export type SongStatus = 'demo' | 'released' | 'retired'
+export type SongStatus = 'demo' | 'released'
 export type SectionType = 'intro' | 'verse' | 'prehook' | 'chorus' | 'bridge' | 'outro'
 export type RiffKind = 'photo' | 'gp_tab'
 

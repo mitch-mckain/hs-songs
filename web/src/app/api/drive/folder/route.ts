@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { extractFolderId, listFolderFiles, isAudioFile, isGpFile, isLogicFile, isGoogleDoc } from '@/lib/drive'
+import { extractFolderId, listFolderFiles, isAudioFile, isGpFile, isLogicFile, isGoogleDoc, isPracticeFolder } from '@/lib/drive'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -25,6 +25,17 @@ export async function GET(request: Request) {
     const gpFile = files.find(isGpFile) ?? null
     const logicFile = files.find(isLogicFile) ?? null
     const docFile = files.find(isGoogleDoc) ?? null
+    const practiceFolder = files.find(isPracticeFolder) ?? null
+
+    // Scan practice subfolder for audio files if found
+    let practiceFiles: { id: string; name: string }[] = []
+    if (practiceFolder) {
+      const practiceItems = await listFolderFiles(practiceFolder.id, accessToken)
+      practiceFiles = practiceItems
+        .filter(isAudioFile)
+        .sort((a, b) => b.name.localeCompare(a.name))
+        .map(f => ({ id: f.id, name: f.name }))
+    }
 
     return NextResponse.json({
       audioFile: audioFile ? { id: audioFile.id, name: audioFile.name } : null,
@@ -39,6 +50,7 @@ export async function GET(request: Request) {
         name: docFile.name,
         url: `https://docs.google.com/document/d/${docFile.id}/edit`,
       } : null,
+      practiceFiles,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to list folder'

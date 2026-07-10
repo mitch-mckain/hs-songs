@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+function incrementVersion(current: string | null): string {
+  if (!current) return '1.1'
+  const [major, minor] = current.split('.')
+  return `${major}.${(parseInt(minor ?? '0') || 0) + 1}`
+}
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -16,9 +22,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const body = await request.json()
+  const { data: current } = await db.from('songs').select('version').eq('id', id).single()
   const { error } = await db
     .from('songs')
-    .update({ ...body, updated_by: user.id, last_updated: new Date().toISOString() })
+    .update({ ...body, version: incrementVersion(current?.version), updated_by: user.id, last_updated: new Date().toISOString() })
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -42,6 +49,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const body = await request.json()
   const { song, chords, structureRows } = body
 
+  const { data: current } = await db.from('songs').select('version').eq('id', id).single()
+
   // Update song
   const { error: songError } = await db
     .from('songs')
@@ -53,7 +62,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       bpm: song.bpm || null,
       time_signature: song.time_signature || null,
       capo: song.capo || null,
-      version: song.version || null,
+      version: incrementVersion(current?.version),
       tuning: song.tuning,
       drive_folder_url: song.drive_folder_url || null,
       practice_folder_url: song.practice_folder_url || null,
