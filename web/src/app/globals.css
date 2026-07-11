@@ -101,4 +101,6 @@ body {
   .structure-hint { display: none !important; }
   .bottom-player-time { display: none !important; }
   .bottom-player-info { max-width: 140px !important; min-width: 0 !important; }
+  .bp-desktop { display: none !important; }
+  .bp-mobile { display: flex !important; }
 }
