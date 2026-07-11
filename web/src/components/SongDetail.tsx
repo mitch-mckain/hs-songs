@@ -94,7 +94,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [lyricsError, setLyricsError] = useState<string | null>(null)
   const [lyricsLoading, setLyricsLoading] = useState(false)
 
-  const [driveNotes, setDriveNotes] = useState<string | null>(null)
+  const [driveNotesHtml, setDriveNotesHtml] = useState<string | null>(null)
   const [driveNotesLoading, setDriveNotesLoading] = useState(false)
 
 
@@ -145,9 +145,9 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   useEffect(() => {
     if (!notesDocFile) return
     setDriveNotesLoading(true)
-    fetch(`/api/lyrics?url=${encodeURIComponent(notesDocFile.url)}`)
+    fetch(`/api/notes-doc?url=${encodeURIComponent(notesDocFile.url)}`)
       .then(r => r.json())
-      .then(data => { if (!data.error) setDriveNotes(data.text) })
+      .then(data => { if (!data.error) setDriveNotesHtml(data.html) })
       .catch(() => {})
       .finally(() => setDriveNotesLoading(false))
   }, [notesDocFile])
@@ -370,17 +370,19 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         </div>
 
         {/* ── NOTES ── */}
-        {(driveNotes || driveNotesLoading || song.notes) && (
+        {(driveNotesHtml || driveNotesLoading || song.notes) && (
           <div style={{ marginBottom: 32 }}>
             <SectionHeader title="Notes" open={notesOpen} onToggle={() => setNotesOpen(o => !o)} />
             {notesOpen && (
               <div style={{ borderLeft: '2px solid #e3e0d8', paddingLeft: 14 }}>
                 {driveNotesLoading ? (
                   <div style={{ fontSize: 13, color: '#8a8790', fontStyle: 'italic' }}>Loading notes…</div>
-                ) : driveNotes ? (
-                  <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 14.5, lineHeight: 1.6, color: '#4a4850', whiteSpace: 'pre-wrap', wordBreak: 'normal', overflowWrap: 'break-word' }}>
-                    {driveNotes}
-                  </pre>
+                ) : driveNotesHtml ? (
+                  <div
+                    className="song-notes"
+                    style={{ fontSize: 14.5, lineHeight: 1.6, color: '#4a4850' }}
+                    dangerouslySetInnerHTML={{ __html: driveNotesHtml }}
+                  />
                 ) : song.notes ? (
                   <div
                     className="song-notes"
