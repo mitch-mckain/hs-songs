@@ -31,6 +31,13 @@ export default function BottomPlayer() {
     seek((e.clientX - rect.left) / rect.width)
   }
 
+  function handleTouchScrub(e: React.TouchEvent<HTMLDivElement>) {
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.touches[0].clientX
+    seek(Math.max(0, Math.min(1, (x - rect.left) / rect.width)))
+  }
+
   const prevBtn = (
     <button onClick={playPrev} title="Previous song" style={{ background: 'none', border: 'none', color: '#b8b5be', cursor: 'pointer', flex: '0 0 auto', padding: 4 }}>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -69,6 +76,19 @@ export default function BottomPlayer() {
       <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: '#e3e0d8', borderRadius: 1 }} />
       <div style={{ position: 'absolute', left: 0, height: 2, width: `${progress}%`, background: '#1a1a1f', borderRadius: 1 }} />
       <div style={{ position: 'absolute', left: `${progress}%`, width: 11, height: 11, marginLeft: -5.5, borderRadius: '50%', background: '#1a1a1f' }} />
+    </div>
+  )
+
+  const progressBarTouch = (
+    <div
+      onClick={handleProgressClick}
+      onTouchStart={handleTouchScrub}
+      onTouchMove={handleTouchScrub}
+      style={{ flex: 1, height: 44, display: 'flex', alignItems: 'center', position: 'relative', cursor: 'pointer', touchAction: 'none' }}
+    >
+      <div style={{ position: 'absolute', left: 0, right: 0, height: 3, background: '#e3e0d8', borderRadius: 2 }} />
+      <div style={{ position: 'absolute', left: 0, height: 3, width: `${progress}%`, background: '#1a1a1f', borderRadius: 2 }} />
+      <div style={{ position: 'absolute', left: `${progress}%`, width: 22, height: 22, marginLeft: -11, borderRadius: '50%', background: '#1a1a1f' }} />
     </div>
   )
 
@@ -116,7 +136,7 @@ export default function BottomPlayer() {
         </div>
         {/* Row 2: progress + time */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {progressBar}
+          {progressBarTouch}
           {timeDisplay}
         </div>
         {/* Row 3: controls */}
