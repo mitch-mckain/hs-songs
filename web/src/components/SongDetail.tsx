@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { buildDiagramData, transposeChordName, transposeShape } from '@/lib/chords'
 import ChordDiagram from '@/components/ChordDiagram'
 import WaveformPlayer from '@/components/WaveformPlayer'
@@ -116,7 +117,19 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
       .then(r => r.json())
       .then(data => {
         if (data.error) {
-          setFolderError(data.error.includes('access token') ? 'Google session expired — sign out and sign back in to refresh it.' : data.error)
+          if (data.error.includes('access token')) {
+            // Google token expired — silently re-auth and return to this page
+            const supabase = createClient()
+            supabase.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+                scopes: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/documents.readonly',
+              },
+            })
+          } else {
+            setFolderError(data.error)
+          }
         } else {
           setAudioFile(data.audioFile ?? null)
           setGpFile(data.gpFile ?? null)

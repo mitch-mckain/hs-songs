@@ -25,5 +25,6 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(origin)
+  const next = searchParams.get('next') ?? '/'
+  return NextResponse.redirect(`${origin}${next}`)
 }
