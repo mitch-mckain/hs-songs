@@ -127,25 +127,29 @@ body {
   .mobile-sticky-header {
     display: flex;
     position: fixed;
-    top: 0; left: 0; right: 0;
+    top: calc(12px + env(safe-area-inset-top));
+    left: 16px;
     z-index: 200;
-    align-items: center;
-    gap: 10px;
-    height: 52px;
-    padding: 0 16px;
-    padding-top: env(safe-area-inset-top);
-    background: rgba(251,250,247,0.92);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid #e3e0d8;
     opacity: 0;
-    transform: translateY(-8px);
     pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.2s ease;
   }
   .mobile-sticky-header.visible {
     opacity: 1;
-    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .mobile-back-to-top {
+    display: flex;
+    position: fixed;
+    bottom: calc(90px + env(safe-area-inset-bottom));
+    right: 16px;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .mobile-back-to-top.visible {
+    opacity: 1;
     pointer-events: auto;
   }
   .detail-back-desktop { display: none !important; }

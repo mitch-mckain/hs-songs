@@ -276,10 +276,16 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
     {/* Mobile sticky header */}
     <div className={`mobile-sticky-header${stickyVisible ? ' visible' : ''}`}>
       {backBtn}
-      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a1f', letterSpacing: '-0.01em' }}>
-        {song.title}
-      </span>
     </div>
+    <button
+      className={`mobile-back-to-top${stickyVisible ? ' visible' : ''}`}
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      style={{ width: 40, height: 40, borderRadius: '50%', background: '#1a1a1f', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 9L7 4l5 5"/>
+      </svg>
+    </button>
 
     <div style={{ minHeight: '100vh', background: '#fbfaf7', paddingBottom: 80 }}>
       <div className="detail-container" style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px 60px' }}>
