@@ -114,6 +114,13 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [backLoading, setBackLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [stickyVisible, setStickyVisible] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setStickyVisible(window.scrollY > 80)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
     if (!song.drive_folder_url) return
@@ -267,7 +274,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   return (
     <>
     {/* Mobile sticky header */}
-    <div className="mobile-sticky-header">
+    <div className={`mobile-sticky-header${stickyVisible ? ' visible' : ''}`}>
       {backBtn}
       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a1f', letterSpacing: '-0.01em' }}>
         {song.title}

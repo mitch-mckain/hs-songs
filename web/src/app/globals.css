@@ -138,9 +138,18 @@ body {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid #e3e0d8;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .mobile-sticky-header.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
   }
   .detail-back-desktop { display: none !important; }
-  .detail-container { padding-top: 68px !important; }
+  .detail-container { padding-top: 16px !important; }
 }
 
 /* Mobile responsive */
