@@ -32,6 +32,28 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   return NextResponse.json({ id })
 }
 
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const roleResult = await db.from('user_roles').select('role').eq('user_id', user.id).single()
+  if (roleResult.data?.role !== 'editor') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  await db.from('song_structure_rows').delete().eq('song_id', id)
+  await db.from('song_chords').delete().eq('song_id', id)
+  const { error } = await db.from('songs').delete().eq('id', id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()

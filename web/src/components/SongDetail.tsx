@@ -112,6 +112,8 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [expandedChord, setExpandedChord] = useState<{ name: string; diagram: ReturnType<typeof buildDiagramData> } | null>(null)
   const [backActive, setBackActive] = useState(false)
   const [backLoading, setBackLoading] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (!song.drive_folder_url) return
@@ -267,12 +269,50 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
             )}
           </button>
           {isEditor && (
-            <button
-              onClick={() => router.push(`/songs/${song.id}/edit`)}
-              style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer', background: '#ffffff', color: '#4a4850', border: '1px solid #e3e0d8', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
-            >
-              Edit song
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {deleteConfirm ? (
+                <>
+                  <span style={{ fontSize: 12, color: '#8a8790' }}>Delete?</span>
+                  <button
+                    disabled={deleting}
+                    onClick={async () => {
+                      setDeleting(true)
+                      const res = await fetch(`/api/songs/${song.id}`, { method: 'DELETE' })
+                      if (res.ok) {
+                        router.push('/')
+                      } else {
+                        setDeleting(false)
+                        setDeleteConfirm(false)
+                      }
+                    }}
+                    style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: deleting ? 'not-allowed' : 'pointer', background: '#c0392b', color: '#fff', border: 'none' }}
+                  >
+                    {deleting ? 'Deleting…' : 'Yes, delete'}
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(false)}
+                    style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer', background: '#ffffff', color: '#4a4850', border: '1px solid #e3e0d8' }}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => router.push(`/songs/${song.id}/edit`)}
+                    style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer', background: '#ffffff', color: '#4a4850', border: '1px solid #e3e0d8', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                  >
+                    Edit song
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(true)}
+                    style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer', background: '#ffffff', color: '#b8b5be', border: '1px solid #e3e0d8', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </div>
 
