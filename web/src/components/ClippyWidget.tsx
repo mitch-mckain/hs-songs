@@ -31,7 +31,8 @@ export default function ClippyWidget() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(clippy as any)._animator._sounds = {}
 
-    clippy.show()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(clippy as any).show()
     pinElement(el)
     const t = setTimeout(() => pinElement(el), 300)
 
