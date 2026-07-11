@@ -11,6 +11,18 @@ import NotesEditor from '@/components/NotesEditor'
 const AlphaTabViewer = dynamic(() => import('@/components/AlphaTabViewer'), { ssr: false })
 import type { Song, SongChord, SongStructureRow } from '@/types/database'
 
+// Strip Quill-specific artifacts that cause layout issues on mobile:
+// - ql-ui spans (bullet glyphs we handle via CSS lists)
+// - inline white-space styles (Quill uses pre-wrap which prevents wrapping)
+// - empty spans left behind by cursor/composition
+function cleanNotesHtml(html: string): string {
+  return html
+    .replace(/<span[^>]*class="[^"]*ql-ui[^"]*"[^>]*>.*?<\/span>/g, '')
+    .replace(/white-space\s*:\s*[^;'"]+;?\s*/gi, '')
+    .replace(/style=""\s*/g, '')
+    .replace(/<span[^>]*>\s*<\/span>/g, '')
+}
+
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   demo:     { bg: '#FBE3B8', color: '#8A5A16', label: 'Demo' },
   released: { bg: '#DCEEBF', color: '#4C7A20', label: 'Released' },
@@ -357,7 +369,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
                     <div
                       className="song-notes"
                       style={{ fontSize: 14.5, lineHeight: 1.6, color: '#4a4850' }}
-                      dangerouslySetInnerHTML={{ __html: notesValue }}
+                      dangerouslySetInnerHTML={{ __html: cleanNotesHtml(notesValue) }}
                     />
                   ) : (
                     <div style={{ fontSize: 14, color: '#a4917a', padding: '6px 0' }}>{isEditor ? 'Click to add notes…' : ''}</div>
