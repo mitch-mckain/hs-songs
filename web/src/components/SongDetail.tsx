@@ -11,23 +11,34 @@ import NotesEditor from '@/components/NotesEditor'
 const AlphaTabViewer = dynamic(() => import('@/components/AlphaTabViewer'), { ssr: false })
 import type { Song, SongChord, SongStructureRow } from '@/types/database'
 
-// Use browser DOM parser to reliably clean Quill HTML artifacts
+// Convert notes HTML to a flat structure safe for mobile rendering.
+// Lists are converted to indented paragraphs to avoid list layout edge cases
+// that cause mid-word breaks at certain viewport widths.
 function cleanNotesHtml(html: string): string {
   if (typeof document === 'undefined') return html
   const div = document.createElement('div')
   div.innerHTML = html
   // Remove ql-ui bullet glyph spans
   div.querySelectorAll('.ql-ui').forEach(el => el.remove())
-  // Strip ALL inline styles — Quill adds white-space:pre-wrap and others that break layout
+  // Strip all inline styles
   div.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'))
-  // Unwrap plain spans (no class, no style) — Quill leaves cursor/composition spans
+  // Unwrap plain spans
   div.querySelectorAll('span').forEach(span => {
-    if (!span.className && !span.getAttribute('style')) {
-      span.replaceWith(...Array.from(span.childNodes))
-    }
+    if (!span.className) span.replaceWith(...Array.from(span.childNodes))
   })
-  // Remove stray <br> inside list items (Quill can insert these mid-word on mobile save)
-  div.querySelectorAll('li br').forEach(br => br.replaceWith(' '))
+  // Convert list items → <p class="notes-li"> to avoid list layout issues
+  div.querySelectorAll('li').forEach(li => {
+    const p = document.createElement('p')
+    p.className = 'notes-li'
+    // TipTap wraps li content in <p>; unwrap it
+    const inner = li.querySelector('p')
+    p.innerHTML = (inner ? inner.innerHTML : li.innerHTML)
+    li.replaceWith(p)
+  })
+  // Remove now-empty ul/ol wrappers
+  div.querySelectorAll('ul, ol').forEach(list => {
+    list.replaceWith(...Array.from(list.childNodes))
+  })
   return div.innerHTML
 }
 
