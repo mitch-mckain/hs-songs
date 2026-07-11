@@ -30,12 +30,16 @@ body {
 
 /* Notes read view */
 .song-notes { display: block; width: 100%; max-width: 100%; overflow-wrap: break-word; word-break: normal; hyphens: none; }
-.song-notes p { margin: 0 0 6px; }
+.song-notes p { margin: 0 0 6px; white-space: normal; }
 .song-notes ol, .song-notes ul { list-style: disc; padding-left: 20px; margin: 4px 0 8px; }
-.song-notes li { margin-bottom: 3px; }
+.song-notes li { margin-bottom: 3px; white-space: normal; overflow-wrap: break-word; word-break: normal; }
+.song-notes li p { margin: 0; }
 .song-notes li .ql-ui { display: none; }
 .song-notes strong { font-weight: 700; color: #37352f; }
 .song-notes em { font-style: italic; }
+/* TipTap editor content */
+.tiptap { outline: none; }
+.tiptap p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #b8b5be; pointer-events: none; float: left; height: 0; }
 
 /* Quill editor overrides */
 .notes-quill-wrap .ql-toolbar .ql-formats { margin-right: 4px !important; }

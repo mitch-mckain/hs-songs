@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 
-const NotesEditorQuill = dynamic(() => import('./NotesEditorQuill'), {
+const NotesEditorTipTap = dynamic(() => import('./NotesEditorTipTap'), {
   ssr: false,
   loading: () => (
     <div style={{
@@ -23,5 +23,5 @@ interface Props {
 }
 
 export default function NotesEditor(props: Props) {
-  return <NotesEditorQuill {...props} />
+  return <NotesEditorTipTap {...props} />
 }
