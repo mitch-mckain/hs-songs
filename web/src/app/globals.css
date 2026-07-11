@@ -124,24 +124,10 @@ body {
 .mobile-sticky-header { display: none; }
 
 @media (max-width: 640px) {
-  .mobile-sticky-header {
-    display: flex;
-    position: fixed;
-    top: calc(12px + env(safe-area-inset-top));
-    left: 16px;
-    z-index: 200;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
-  .mobile-sticky-header.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
   .mobile-back-to-top {
     display: flex;
     position: fixed;
-    bottom: calc(90px + env(safe-area-inset-bottom));
+    bottom: calc(120px + env(safe-area-inset-bottom));
     right: 16px;
     z-index: 200;
     opacity: 0;
@@ -152,8 +138,6 @@ body {
     opacity: 1;
     pointer-events: auto;
   }
-  .detail-back-desktop { display: none !important; }
-  .detail-container { padding-top: 16px !important; }
 }
 
 /* Mobile responsive */
