@@ -60,7 +60,9 @@ export default function AlphaTabViewer({ fileId, title }: Props) {
         settings.player.scrollMode = 0 // Off — prevent auto-scroll to cursor
         settings.player.soundFont = 'https://cdn.jsdelivr.net/npm/@coderline/alphatab@latest/dist/soundfont/sonivox.sf2'
         settings.core.fontDirectory = 'https://cdn.jsdelivr.net/npm/@coderline/alphatab@latest/dist/font/'
-        settings.display.scale = 0.9
+        const isMobile = window.innerWidth < 640
+        settings.display.scale = isMobile ? 0.65 : 0.9
+        if (isMobile) settings.display.barsPerRow = 2
 
         const api = new at.AlphaTabApi(containerRef.current!, settings)
         apiRef.current = api
