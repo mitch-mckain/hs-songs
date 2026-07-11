@@ -1,10 +1,11 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/Logo'
 
-export default function LoginPage() {
+function LoginContent() {
   const searchParams = useSearchParams()
   const unauthorized = searchParams.get('error') === 'unauthorized'
   async function signInWithGoogle() {
@@ -93,5 +94,13 @@ export default function LoginPage() {
 
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   )
 }
