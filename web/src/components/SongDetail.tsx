@@ -241,13 +241,45 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
     { label: 'VERSION', value: song.version ?? '—' },
   ]
 
+  const backBtn = (
+    <button
+      onClick={() => { setBackLoading(true); router.push('/') }}
+      onMouseDown={() => setBackActive(true)}
+      onMouseUp={() => setBackActive(false)}
+      onMouseLeave={() => setBackActive(false)}
+      onTouchStart={() => setBackActive(true)}
+      onTouchEnd={() => setBackActive(false)}
+      style={{ width: 36, height: 36, borderRadius: '50%', background: backActive ? '#e3e0d8' : '#ffffff', border: '1px solid #e3e0d8', boxShadow: backActive ? 'none' : '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0, transform: backActive ? 'scale(0.93)' : 'scale(1)', transition: 'background 0.1s, transform 0.1s, box-shadow 0.1s' }}
+    >
+      {backLoading ? (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ animation: 'spin 0.7s linear infinite' }}>
+          <circle cx="7" cy="7" r="5" stroke="#d6d0c8" strokeWidth="2"/>
+          <path d="M7 2a5 5 0 0 1 5 5" stroke="#4a4850" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#4a4850" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 2L4 7l5 5"/>
+        </svg>
+      )}
+    </button>
+  )
+
   return (
     <>
+    {/* Mobile sticky header */}
+    <div className="mobile-sticky-header">
+      {backBtn}
+      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a1f', letterSpacing: '-0.01em' }}>
+        {song.title}
+      </span>
+    </div>
+
     <div style={{ minHeight: '100vh', background: '#fbfaf7', paddingBottom: 80 }}>
       <div className="detail-container" style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px 60px' }}>
 
         {/* Back + Edit */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div className="detail-back-desktop">
           <button
             onClick={() => { setBackLoading(true); router.push('/') }}
             onMouseDown={() => setBackActive(true)}
@@ -268,6 +300,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
               </svg>
             )}
           </button>
+          </div>
           {isEditor && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {deleteConfirm ? (

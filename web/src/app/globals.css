@@ -110,6 +110,29 @@ body {
   .notes-quill-wrap .ql-toolbar { flex-wrap: wrap !important; overflow-x: auto !important; }
 }
 
+/* Mobile sticky song header */
+.mobile-sticky-header { display: none; }
+
+@media (max-width: 640px) {
+  .mobile-sticky-header {
+    display: flex;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 200;
+    align-items: center;
+    gap: 10px;
+    height: 52px;
+    padding: 0 16px;
+    padding-top: env(safe-area-inset-top);
+    background: rgba(251,250,247,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid #e3e0d8;
+  }
+  .detail-back-desktop { display: none !important; }
+  .detail-container { padding-top: 68px !important; }
+}
+
 /* Mobile responsive */
 @media (max-width: 640px) {
   .lib-container { padding-top: 24px !important; padding-left: 16px !important; padding-right: 16px !important; }
