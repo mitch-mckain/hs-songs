@@ -383,7 +383,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
                   })
                   dragIndexRef.current = null
                 }}
-                onClick={() => { setEditingChordId(chord.id); setPickerOpen(true); setPickerTab('build') }}
+                onClick={() => { setEditingChordId(chord.id); setPickerOpen(true); setPickerTab('custom') }}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                   border: `1px solid ${editingChordId === chord.id ? '#1a1a1f' : '#e3e0d8'}`,
