@@ -86,12 +86,16 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [gpFile, setGpFile] = useState<{ id: string; name: string } | null>(null)
   const [logicFile, setLogicFile] = useState<{ url: string } | null>(null)
   const [docFile, setDocFile] = useState<{ url: string } | null>(null)
+  const [notesDocFile, setNotesDocFile] = useState<{ url: string } | null>(null)
   const [practiceFiles, setPracticeFiles] = useState<{ id: string; name: string }[]>([])
   const [folderError, setFolderError] = useState<string | null>(null)
 
   const [lyrics, setLyrics] = useState<string | null>(null)
   const [lyricsError, setLyricsError] = useState<string | null>(null)
   const [lyricsLoading, setLyricsLoading] = useState(false)
+
+  const [driveNotes, setDriveNotes] = useState<string | null>(null)
+  const [driveNotesLoading, setDriveNotesLoading] = useState(false)
 
   const [notesValue, setNotesValue] = useState(song.notes ?? '')
   const [notesEditing, setNotesEditing] = useState(false)
@@ -121,6 +125,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
           setGpFile(data.gpFile ?? null)
           setLogicFile(data.logicFile ?? null)
           setDocFile(data.docFile ?? null)
+          setNotesDocFile(data.notesDocFile ?? null)
           setPracticeFiles(data.practiceFiles ?? [])
         }
       })
@@ -139,6 +144,16 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
       .catch(() => setLyricsError('Failed to load lyrics'))
       .finally(() => setLyricsLoading(false))
   }, [docFile])
+
+  useEffect(() => {
+    if (!notesDocFile) return
+    setDriveNotesLoading(true)
+    fetch(`/api/lyrics?url=${encodeURIComponent(notesDocFile.url)}`)
+      .then(r => r.json())
+      .then(data => { if (!data.error) setDriveNotes(data.text) })
+      .catch(() => {})
+      .finally(() => setDriveNotesLoading(false))
+  }, [notesDocFile])
 
   // Metronome
   function toggleMetronome() {
@@ -358,11 +373,22 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         </div>
 
         {/* ── NOTES ── */}
-        {(song.notes || isEditor) && (
+        {(driveNotes || driveNotesLoading || song.notes || isEditor) && (
           <div style={{ marginBottom: 32 }}>
             <SectionHeader title="Notes" open={notesOpen} onToggle={() => setNotesOpen(o => !o)} />
             {notesOpen && (
-              notesEditing ? (
+              driveNotes || driveNotesLoading ? (
+                /* Drive doc notes */
+                <div style={{ borderLeft: '2px solid #e3e0d8', paddingLeft: 14 }}>
+                  {driveNotesLoading ? (
+                    <div style={{ fontSize: 13, color: '#8a8790', fontStyle: 'italic' }}>Loading notes…</div>
+                  ) : (
+                    <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 14.5, lineHeight: 1.6, color: '#4a4850', whiteSpace: 'pre-wrap', wordBreak: 'normal', overflowWrap: 'break-word' }}>
+                      {driveNotes}
+                    </pre>
+                  )}
+                </div>
+              ) : notesEditing ? (
                 <NotesEditor
                   value={notesValue}
                   onChange={setNotesValue}

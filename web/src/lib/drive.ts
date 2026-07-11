@@ -48,6 +48,14 @@ export function isGoogleDoc(file: DriveFile): boolean {
   return file.mimeType === 'application/vnd.google-apps.document'
 }
 
+export function isNotesDoc(file: DriveFile): boolean {
+  return isGoogleDoc(file) && file.name.toLowerCase().includes('notes')
+}
+
+export function isLyricsDoc(file: DriveFile): boolean {
+  return isGoogleDoc(file) && !file.name.toLowerCase().includes('notes')
+}
+
 export function isFolder(file: DriveFile): boolean {
   return file.mimeType === 'application/vnd.google-apps.folder'
 }

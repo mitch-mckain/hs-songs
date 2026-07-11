@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { extractFolderId, listFolderFiles, isAudioFile, isGpFile, isLogicFile, isGoogleDoc, isPracticeFolder } from '@/lib/drive'
+import { extractFolderId, listFolderFiles, isAudioFile, isGpFile, isLogicFile, isLyricsDoc, isNotesDoc, isPracticeFolder } from '@/lib/drive'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -24,7 +24,8 @@ export async function GET(request: Request) {
     const audioFile = files.find(isAudioFile) ?? null
     const gpFile = files.find(isGpFile) ?? null
     const logicFile = files.find(isLogicFile) ?? null
-    const docFile = files.find(isGoogleDoc) ?? null
+    const docFile = files.find(isLyricsDoc) ?? null
+    const notesDocFile = files.find(isNotesDoc) ?? null
     const practiceFolder = files.find(isPracticeFolder) ?? null
 
     // Scan practice subfolder for audio files if found
@@ -49,6 +50,11 @@ export async function GET(request: Request) {
         id: docFile.id,
         name: docFile.name,
         url: `https://docs.google.com/document/d/${docFile.id}/edit`,
+      } : null,
+      notesDocFile: notesDocFile ? {
+        id: notesDocFile.id,
+        name: notesDocFile.name,
+        url: `https://docs.google.com/document/d/${notesDocFile.id}/edit`,
       } : null,
       practiceFiles,
     })
