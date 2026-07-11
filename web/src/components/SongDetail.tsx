@@ -351,7 +351,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
               ) : (
                 <div
                   onClick={() => isEditor && setNotesEditing(true)}
-                  style={{ cursor: isEditor ? 'text' : 'default', minHeight: isEditor ? 40 : undefined, borderLeft: '2px solid #e3e0d8', paddingLeft: 14 }}
+                  style={{ cursor: isEditor ? 'text' : 'default', minHeight: isEditor ? 40 : undefined, borderLeft: '2px solid #e3e0d8', paddingLeft: 14, minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}
                 >
                   {notesValue ? (
                     <div
