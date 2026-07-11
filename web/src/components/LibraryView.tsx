@@ -84,6 +84,7 @@ export default function LibraryView({ songs, role }: Props) {
   const { play, track, playing, togglePlay, setOnEnded, setOnPrev } = usePlayer()
 
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null)
+  const [navigatingSongId, setNavigatingSongId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'demo' | 'released'>('all')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -325,15 +326,16 @@ export default function LibraryView({ songs, role }: Props) {
                   const status = STATUS_STYLES[song.status] ?? STATUS_STYLES.demo
                   const isThisPlaying = track?.songId === song.id && playing
                   const isLoading = loadingSongId === song.id
+                  const isNavigating = navigatingSongId === song.id
                   const hasFolder = !!song.drive_folder_url
 
                   return (
                     <div
                       key={song.id}
-                      onClick={() => router.push(`/songs/${song.id}`)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 8px', cursor: 'pointer', borderBottom: '1px solid #e3e0d8', background: 'transparent', transition: 'background 0.1s', borderRadius: 8 }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#f5f3ee'; e.currentTarget.style.borderRadius = '8px' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                      onClick={() => { setNavigatingSongId(song.id); router.push(`/songs/${song.id}`) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 8px', cursor: 'pointer', borderBottom: '1px solid #e3e0d8', background: isNavigating ? '#ece8df' : 'transparent', transition: 'background 0.1s', borderRadius: 8 }}
+                      onMouseEnter={e => { if (!isNavigating) e.currentTarget.style.background = '#f5f3ee' }}
+                      onMouseLeave={e => { if (!isNavigating) e.currentTarget.style.background = 'transparent' }}
                     >
                       {/* Album art */}
                       <div className="cassette-cell" style={{ flexShrink: 0, width: 96, height: 67 }} onClick={e => e.stopPropagation()}>
@@ -383,6 +385,14 @@ export default function LibraryView({ songs, role }: Props) {
                           <span>TUNING <b style={{ color: '#4a4850' }}>{song.tuning}</b></span>
                         </div>
                       </div>
+
+                      {/* Loading spinner when navigating */}
+                      {isNavigating && (
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, animation: 'spin 0.7s linear infinite' }}>
+                          <circle cx="8" cy="8" r="6" stroke="#d6d0c8" strokeWidth="2"/>
+                          <path d="M8 2a6 6 0 0 1 6 6" stroke="#4a4850" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                      )}
 
                       {/* Updated date */}
                       <div className="lib-date" style={{ fontSize: 11, color: '#b8b5be', flexShrink: 0, whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono), monospace' }}>

@@ -110,6 +110,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [riffsOpen, setRiffsOpen] = useState(true)
   const [lyricsOpen, setLyricsOpen] = useState(true)
   const [expandedChord, setExpandedChord] = useState<{ name: string; diagram: ReturnType<typeof buildDiagramData> } | null>(null)
+  const [backActive, setBackActive] = useState(false)
 
   useEffect(() => {
     if (!song.drive_folder_url) return
@@ -246,7 +247,12 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <button
             onClick={() => router.push('/')}
-            style={{ width: 36, height: 36, borderRadius: '50%', background: '#ffffff', border: '1px solid #e3e0d8', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }}
+            onMouseDown={() => setBackActive(true)}
+            onMouseUp={() => setBackActive(false)}
+            onMouseLeave={() => setBackActive(false)}
+            onTouchStart={() => setBackActive(true)}
+            onTouchEnd={() => setBackActive(false)}
+            style={{ width: 36, height: 36, borderRadius: '50%', background: backActive ? '#e3e0d8' : '#ffffff', border: '1px solid #e3e0d8', boxShadow: backActive ? 'none' : '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0, transform: backActive ? 'scale(0.93)' : 'scale(1)', transition: 'background 0.1s, transform 0.1s, box-shadow 0.1s' }}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#4a4850" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 2L4 7l5 5"/>
