@@ -12,7 +12,7 @@ function formatTime(s: number): string {
 }
 
 export default function BottomPlayer() {
-  const { track, playing, currentTime, duration, togglePlay, seek, close } = usePlayer()
+  const { track, playing, currentTime, duration, togglePlay, seek, close, playNext, playPrev } = usePlayer()
   const pathname = usePathname()
 
   const isEditRoute = pathname?.includes('/edit') || pathname?.includes('/new')
@@ -38,6 +38,18 @@ export default function BottomPlayer() {
       zIndex: 20,
     }}>
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Prev */}
+        <button
+          onClick={playPrev}
+          title="Previous song"
+          style={{ background: 'none', border: 'none', color: '#b8b5be', cursor: 'pointer', flex: '0 0 auto', padding: 4 }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <rect x="1" y="2" width="3" height="12" rx="1"/>
+            <polygon points="15,2 6,8 15,14"/>
+          </svg>
+        </button>
+
         {/* Play/pause */}
         <button
           onClick={togglePlay}
@@ -56,7 +68,7 @@ export default function BottomPlayer() {
         </button>
 
         {/* Song info */}
-        <div style={{ flex: '0 0 auto', minWidth: 90, maxWidth: 150 }}>
+        <div className="bottom-player-info" style={{ flex: '0 0 auto', minWidth: 90, maxWidth: 150 }}>
           <div style={{ fontWeight: 700, fontSize: 13, color: '#17181c', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {track.songTitle}
           </div>
@@ -76,9 +88,21 @@ export default function BottomPlayer() {
         </div>
 
         {/* Time */}
-        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: '#b8b5be', width: 76, whiteSpace: 'nowrap', textAlign: 'right', flex: '0 0 auto' }}>
+        <div className="bottom-player-time" style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: '#b8b5be', width: 76, whiteSpace: 'nowrap', textAlign: 'right', flex: '0 0 auto' }}>
           {formatTime(currentTime)} / {formatTime(duration)}
         </div>
+
+        {/* Next */}
+        <button
+          onClick={playNext}
+          title="Next song"
+          style={{ background: 'none', border: 'none', color: '#b8b5be', cursor: 'pointer', flex: '0 0 auto', padding: 4 }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <polygon points="1,2 10,8 1,14"/>
+            <rect x="12" y="2" width="3" height="12" rx="1"/>
+          </svg>
+        </button>
 
         {/* Close */}
         <button

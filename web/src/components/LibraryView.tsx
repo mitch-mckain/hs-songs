@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { usePlayer } from '@/context/PlayerContext'
@@ -81,11 +81,54 @@ interface Props {
 export default function LibraryView({ songs, role }: Props) {
   const router = useRouter()
   const isEditor = role === 'editor'
-  const { play, track, playing, togglePlay } = usePlayer()
+  const { play, track, playing, togglePlay, setOnEnded, setOnPrev } = usePlayer()
 
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'demo' | 'released'>('all')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false)
+
+  useEffect(() => {
+    const filtered = songs.filter(s => {
+      const matchSearch = !search || s.title.toLowerCase().includes(search.toLowerCase())
+      const matchStatus = statusFilter === 'all' || s.status === statusFilter
+      return matchSearch && matchStatus
+    })
+    const demos = filtered.filter(s => s.status === 'demo' || !s.album)
+    const byAlbum: Record<string, Song[]> = {}
+    filtered.filter(s => s.status !== 'demo' && s.album).forEach(s => {
+      const album = s.album!
+      if (!byAlbum[album]) byAlbum[album] = []
+      byAlbum[album].push(s)
+    })
+    const orderedSongs = [...demos, ...Object.values(byAlbum).flat()]
+
+    async function fetchAndPlay(song: Song) {
+      if (!song.drive_folder_url) return
+      const res = await fetch(`/api/drive/folder?url=${encodeURIComponent(song.drive_folder_url)}`)
+      const data = await res.json()
+      if (data.audioFile) {
+        play({ songId: song.id, songTitle: song.title, fileId: data.audioFile.id, fileName: data.audioFile.name })
+      }
+    }
+
+    setOnEnded(async () => {
+      if (!track) return
+      const idx = orderedSongs.findIndex(s => s.id === track.songId)
+      const next = orderedSongs[idx + 1]
+      if (next) fetchAndPlay(next)
+    })
+
+    setOnPrev(async () => {
+      if (!track) return
+      const idx = orderedSongs.findIndex(s => s.id === track.songId)
+      const prev = orderedSongs[idx - 1]
+      if (prev) fetchAndPlay(prev)
+    })
+
+    return () => { setOnEnded(null); setOnPrev(null) }
+  }, [songs, search, statusFilter, track, setOnEnded, setOnPrev, play])
 
   async function signOut() {
     const supabase = createClient()
@@ -148,7 +191,7 @@ export default function LibraryView({ songs, role }: Props) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#fbfaf7', paddingBottom: 96 }}>
-      <div style={{ maxWidth: 920, margin: '0 auto', padding: '48px 20px 60px' }}>
+      <div className="lib-container" style={{ maxWidth: 920, margin: '0 auto', padding: '48px 20px 60px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 40, flexWrap: 'wrap' }}>
           <div>
@@ -160,7 +203,8 @@ export default function LibraryView({ songs, role }: Props) {
               Song Dashboard
             </h1>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 4 }}>
+          {/* Desktop buttons */}
+          <div className="lib-header-btns" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 4 }}>
             {isEditor && (
               <button
                 onClick={() => router.push('/songs/new')}
@@ -176,25 +220,93 @@ export default function LibraryView({ songs, role }: Props) {
               Sign out
             </button>
           </div>
+
+          {/* Mobile hamburger */}
+          <div className="lib-hamburger" style={{ display: 'none', position: 'relative' }}>
+            <button
+              onClick={() => setMenuOpen(o => !o)}
+              style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid #e3e0d8', background: '#ffffff', cursor: 'pointer' }}
+            >
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+                <rect y="0" width="16" height="2" rx="1" fill="#1a1a1f"/>
+                <rect y="5" width="16" height="2" rx="1" fill="#1a1a1f"/>
+                <rect y="10" width="16" height="2" rx="1" fill="#1a1a1f"/>
+              </svg>
+            </button>
+            {menuOpen && (
+              <>
+                <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
+                <div style={{ position: 'absolute', top: 42, right: 0, background: '#ffffff', border: '1px solid #e3e0d8', borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', minWidth: 160, zIndex: 11, overflow: 'hidden' }}>
+                  {isEditor && (
+                    <button
+                      onClick={() => { setMenuOpen(false); router.push('/songs/new') }}
+                      style={{ width: '100%', textAlign: 'left', fontSize: 14, fontWeight: 700, padding: '12px 16px', background: 'none', border: 'none', color: '#1a1a1f', cursor: 'pointer', borderBottom: '1px solid #e3e0d8' }}
+                    >
+                      + New song
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setMenuOpen(false); signOut() }}
+                    style={{ width: '100%', textAlign: 'left', fontSize: 14, fontWeight: 600, padding: '12px 16px', background: 'none', border: 'none', color: '#4a4850', cursor: 'pointer' }}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Search + filter bar */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 28, alignItems: 'center' }}>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search songs…"
-            style={{ flex: '1 1 180px', fontFamily: 'inherit', fontSize: 13, padding: '7px 12px', border: '1px solid #e3e0d8', borderRadius: 8, background: '#ffffff', color: '#1a1a1f', outline: 'none' }}
+            style={{ flex: 1, minWidth: 0, fontFamily: 'inherit', fontSize: 13, padding: '7px 12px', border: '1px solid #e3e0d8', borderRadius: 8, background: '#ffffff', color: '#1a1a1f', outline: 'none' }}
           />
-          {(['all', 'demo', 'released'] as const).map(f => (
+          {/* Desktop filter pills */}
+          <div className="lib-filters" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {(['all', 'demo', 'released'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 8, border: '1px solid', borderColor: statusFilter === f ? '#1a1a1f' : '#e3e0d8', background: statusFilter === f ? '#1a1a1f' : '#ffffff', color: statusFilter === f ? '#fff' : '#4a4850', cursor: 'pointer', textTransform: 'capitalize' }}
+              >
+                {f === 'all' ? 'All' : STATUS_STYLES[f].label}
+              </button>
+            ))}
+          </div>
+          {/* Mobile filter button */}
+          <div className="lib-filter-btn" style={{ display: 'none', position: 'relative', flexShrink: 0 }}>
             <button
-              key={f}
-              onClick={() => setStatusFilter(f)}
-              style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 8, border: '1px solid', borderColor: statusFilter === f ? '#1a1a1f' : '#e3e0d8', background: statusFilter === f ? '#1a1a1f' : '#ffffff', color: statusFilter === f ? '#fff' : '#4a4850', cursor: 'pointer', textTransform: 'capitalize' }}
+              onClick={() => setFilterMenuOpen(o => !o)}
+              style={{ height: 34, padding: '0 12px', borderRadius: 8, border: '1px solid', borderColor: statusFilter !== 'all' ? '#1a1a1f' : '#e3e0d8', background: statusFilter !== 'all' ? '#1a1a1f' : '#ffffff', color: statusFilter !== 'all' ? '#fff' : '#4a4850', cursor: 'pointer', fontSize: 11, fontWeight: 700, gap: 6 }}
             >
-              {f === 'all' ? 'All' : STATUS_STYLES[f].label}
+              <svg width="12" height="10" viewBox="0 0 12 10" fill="currentColor" style={{ marginRight: 5 }}>
+                <rect x="0" y="0" width="12" height="2" rx="1"/>
+                <rect x="2" y="4" width="8" height="2" rx="1"/>
+                <rect x="4" y="8" width="4" height="2" rx="1"/>
+              </svg>
+              {statusFilter === 'all' ? 'Filter' : (STATUS_STYLES[statusFilter]?.label ?? statusFilter)}
             </button>
-          ))}
+            {filterMenuOpen && (
+              <>
+                <div onClick={() => setFilterMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
+                <div style={{ position: 'absolute', top: 40, right: 0, background: '#ffffff', border: '1px solid #e3e0d8', borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', minWidth: 130, zIndex: 11, overflow: 'hidden' }}>
+                  {(['all', 'demo', 'released'] as const).map((f, i, arr) => (
+                    <button
+                      key={f}
+                      onClick={() => { setStatusFilter(f); setFilterMenuOpen(false) }}
+                      style={{ width: '100%', textAlign: 'left', fontSize: 14, fontWeight: statusFilter === f ? 700 : 500, padding: '11px 16px', background: statusFilter === f ? '#f5f3ee' : 'none', border: 'none', borderBottom: i < arr.length - 1 ? '1px solid #e3e0d8' : 'none', color: statusFilter === f ? '#1a1a1f' : '#4a4850', cursor: 'pointer' }}
+                    >
+                      {f === 'all' ? 'All' : STATUS_STYLES[f].label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Song sections */}
@@ -224,7 +336,7 @@ export default function LibraryView({ songs, role }: Props) {
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                     >
                       {/* Album art */}
-                      <div style={{ flexShrink: 0, width: 96, height: 67 }} onClick={e => e.stopPropagation()}>
+                      <div className="cassette-cell" style={{ flexShrink: 0, width: 96, height: 67 }} onClick={e => e.stopPropagation()}>
                         <CassetteIcon spinning={isThisPlaying} />
                       </div>
 
@@ -273,7 +385,7 @@ export default function LibraryView({ songs, role }: Props) {
                       </div>
 
                       {/* Updated date */}
-                      <div style={{ fontSize: 11, color: '#b8b5be', flexShrink: 0, whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono), monospace' }}>
+                      <div className="lib-date" style={{ fontSize: 11, color: '#b8b5be', flexShrink: 0, whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono), monospace' }}>
                         <div>{relativeTime(song.last_updated)}</div>
                         <div style={{ fontSize: 10, color: '#c9c6bc', marginTop: 2 }}>{new Date(song.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                       </div>

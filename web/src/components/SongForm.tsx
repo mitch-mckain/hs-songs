@@ -270,7 +270,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
   const cancelTarget = isEdit ? `/songs/${initialSong!.id}` : '/'
 
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px 120px', minHeight: '100vh', background: '#fbfaf7' }}>
+    <div className="detail-container" style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px 120px', minHeight: '100vh', background: '#fbfaf7' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <button

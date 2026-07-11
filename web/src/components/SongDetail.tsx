@@ -184,7 +184,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   return (
     <>
     <div style={{ minHeight: '100vh', background: '#fbfaf7', paddingBottom: 80 }}>
-      <div style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px 60px' }}>
+      <div className="detail-container" style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px 60px' }}>
 
         {/* Back + Edit */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -223,7 +223,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         </div>
 
         {/* Metadata grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 1, background: '#e3e0d8', borderRadius: 10, overflow: 'hidden', marginBottom: 40, boxShadow: '0 4px 20px rgba(0,0,0,0.10)' }}>
+        <div className="meta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 1, background: '#e3e0d8', borderRadius: 10, overflow: 'hidden', marginBottom: 40, boxShadow: '0 4px 20px rgba(0,0,0,0.10)' }}>
           {metaFields.map(f => (
             <div key={f.label} style={{ padding: '14px 15px', background: '#ffffff' }}>
               <div style={{ fontSize: 10, color: '#8a8790', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>{f.label}</div>
@@ -378,7 +378,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
             ) : (
               <div>
                 <div style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, marginBottom: 8, WebkitMaskImage: 'linear-gradient(to right, black 75%, transparent 100%)', maskImage: 'linear-gradient(to right, black 75%, transparent 100%)' }}>
+                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, paddingRight: 200, marginBottom: 8, WebkitMaskImage: 'linear-gradient(to right, black 88%, transparent 100%)', maskImage: 'linear-gradient(to right, black 88%, transparent 100%)' }}>
                   {[...chords].sort((a, b) => a.position - b.position).map(chord => {
                     const diagram = buildDiagramData({ name: chord.name, strings: chord.strings as (number | 'x')[], barre: chord.barre }, 'large')
                     return (
@@ -413,7 +413,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
             <div style={{ flex: 1, height: 1, background: '#e3e0d8', cursor: 'pointer' }} onClick={() => setStructureOpen(o => !o)} />
             {structureOpen && structureRows.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                <span style={{ fontSize: 10, color: '#b8b5be', fontFamily: 'var(--font-mono), monospace' }}>C to collapse all</span>
+                <span className="structure-hint" style={{ fontSize: 10, color: '#b8b5be', fontFamily: 'var(--font-mono), monospace' }}>C to collapse all</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #e3e0d8', borderRadius: 20, overflow: 'hidden' }}>
                   <button onClick={() => setTranspose(t => t - 1)} style={{ fontFamily: 'inherit', fontSize: 14, fontWeight: 700, width: 26, height: 26, border: 'none', background: 'none', color: '#4a4850', cursor: 'pointer' }}>−</button>
                   <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 12, fontWeight: 700, color: transpose === 0 ? '#b8b5be' : '#1a1a1f', minWidth: 30, textAlign: 'center' }}>

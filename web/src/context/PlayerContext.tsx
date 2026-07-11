@@ -19,16 +19,38 @@ interface PlayerContextValue {
   seek: (fraction: number) => void
   close: () => void
   audioRef: React.RefObject<HTMLAudioElement | null>
+  setOnEnded: (cb: (() => void) | null) => void
+  playNext: () => void
+  setOnPrev: (cb: (() => void) | null) => void
+  playPrev: () => void
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null)
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const onEndedRef = useRef<(() => void) | null>(null)
+  const onPrevRef = useRef<(() => void) | null>(null)
   const [track, setTrack] = useState<PlayerTrack | null>(null)
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+
+  const setOnEnded = useCallback((cb: (() => void) | null) => {
+    onEndedRef.current = cb
+  }, [])
+
+  const playNext = useCallback(() => {
+    onEndedRef.current?.()
+  }, [])
+
+  const setOnPrev = useCallback((cb: (() => void) | null) => {
+    onPrevRef.current = cb
+  }, [])
+
+  const playPrev = useCallback(() => {
+    onPrevRef.current?.()
+  }, [])
 
   const play = useCallback((newTrack: PlayerTrack) => {
     const audio = audioRef.current
@@ -88,13 +110,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <PlayerContext.Provider value={{ track, playing, currentTime, duration, play, togglePlay, seek, close, audioRef }}>
+    <PlayerContext.Provider value={{ track, playing, currentTime, duration, play, togglePlay, seek, close, audioRef, setOnEnded, playNext, setOnPrev, playPrev }}>
       {children}
       <audio
         ref={audioRef}
         onTimeUpdate={e => setCurrentTime(e.currentTarget.currentTime)}
         onDurationChange={e => setDuration(e.currentTarget.duration)}
-        onEnded={() => setPlaying(false)}
+        onEnded={() => { setPlaying(false); onEndedRef.current?.() }}
         onPause={() => setPlaying(false)}
         onPlay={() => setPlaying(true)}
       />

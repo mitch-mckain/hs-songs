@@ -28,9 +28,11 @@ body {
 
 
 /* Notes read view */
+.song-notes { display: block; width: 100%; }
 .song-notes p { margin: 0 0 6px; }
-.song-notes ul { list-style: disc; margin: 4px 0 8px; padding-left: 20px; }
+.song-notes ol, .song-notes ul { list-style: disc; padding-left: 20px; margin: 4px 0 8px; }
 .song-notes li { margin-bottom: 3px; }
+.song-notes li .ql-ui { display: none; }
 .song-notes strong { font-weight: 700; color: #37352f; }
 .song-notes em { font-style: italic; }
 
@@ -79,3 +81,24 @@ body {
 .at-cursor-bar { background: rgba(26,26,31,0.06); }
 .at-cursor-beat { background: #1a1a1f; width: 2px !important; }
 .at-highlight * { fill: #d34b2c !important; stroke: #d34b2c !important; }
+
+/* Quill toolbar mobile */
+@media (max-width: 640px) {
+  .notes-quill-wrap .ql-toolbar { flex-wrap: wrap !important; overflow-x: auto !important; }
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .lib-container { padding-top: 24px !important; padding-left: 16px !important; padding-right: 16px !important; }
+  .cassette-cell { display: none !important; }
+  .lib-date { display: none !important; }
+  .lib-header-btns { display: none !important; }
+  .lib-hamburger { display: block !important; }
+  .lib-filters { display: none !important; }
+  .lib-filter-btn { display: block !important; }
+  .detail-container { padding-top: 16px !important; padding-left: 16px !important; padding-right: 16px !important; }
+  .meta-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .structure-hint { display: none !important; }
+  .bottom-player-time { display: none !important; }
+  .bottom-player-info { max-width: 140px !important; min-width: 0 !important; }
+}
