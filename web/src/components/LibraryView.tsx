@@ -223,7 +223,7 @@ export default function LibraryView({ songs, role }: Props) {
           </div>
 
           {/* Mobile hamburger */}
-          <div className="lib-hamburger" style={{ display: 'none', position: 'relative' }}>
+          <div className="lib-hamburger" style={{ display: 'none' }}>
             <button
               onClick={() => setMenuOpen(o => !o)}
               style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid #e3e0d8', background: '#ffffff', cursor: 'pointer' }}
@@ -234,28 +234,45 @@ export default function LibraryView({ songs, role }: Props) {
                 <rect y="10" width="16" height="2" rx="1" fill="#1a1a1f"/>
               </svg>
             </button>
-            {menuOpen && (
-              <>
-                <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
-                <div style={{ position: 'absolute', top: 42, right: 0, background: '#ffffff', border: '1px solid #e3e0d8', borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', minWidth: 160, zIndex: 11, overflow: 'hidden' }}>
+          </div>
+
+          {/* Mobile bottom tray */}
+          {menuOpen && (
+            <>
+              <div
+                onClick={() => setMenuOpen(false)}
+                style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.45)', animation: 'backdrop-in 0.2s ease' }}
+              />
+              <div style={{
+                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 301,
+                background: '#ffffff',
+                borderRadius: '20px 20px 0 0',
+                padding: '12px 20px',
+                paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
+                boxShadow: '0 -8px 32px rgba(0,0,0,0.14)',
+                animation: 'tray-in 0.28s cubic-bezier(0.32,0.72,0,1)',
+              }}>
+                {/* Handle */}
+                <div style={{ width: 40, height: 4, borderRadius: 2, background: '#e3e0d8', margin: '0 auto 24px' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {isEditor && (
                     <button
                       onClick={() => { setMenuOpen(false); router.push('/songs/new') }}
-                      style={{ width: '100%', textAlign: 'left', fontSize: 14, fontWeight: 700, padding: '12px 16px', background: 'none', border: 'none', color: '#1a1a1f', cursor: 'pointer', borderBottom: '1px solid #e3e0d8' }}
+                      style={{ width: '100%', height: 62, borderRadius: 14, border: 'none', background: '#1a1a1f', color: '#ffffff', fontSize: 17, fontWeight: 700, fontFamily: 'var(--font-display), Archivo, sans-serif', cursor: 'pointer', letterSpacing: '-0.01em' }}
                     >
-                      + New song
+                      + New Song
                     </button>
                   )}
                   <button
                     onClick={() => { setMenuOpen(false); signOut() }}
-                    style={{ width: '100%', textAlign: 'left', fontSize: 14, fontWeight: 600, padding: '12px 16px', background: 'none', border: 'none', color: '#4a4850', cursor: 'pointer' }}
+                    style={{ width: '100%', height: 62, borderRadius: 14, border: 'none', background: '#c0392b', color: '#ffffff', fontSize: 17, fontWeight: 700, fontFamily: 'var(--font-display), Archivo, sans-serif', cursor: 'pointer', letterSpacing: '-0.01em' }}
                   >
-                    Sign out
+                    Sign Out
                   </button>
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Search + filter bar */}
