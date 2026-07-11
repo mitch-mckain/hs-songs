@@ -111,6 +111,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [lyricsOpen, setLyricsOpen] = useState(true)
   const [expandedChord, setExpandedChord] = useState<{ name: string; diagram: ReturnType<typeof buildDiagramData> } | null>(null)
   const [backActive, setBackActive] = useState(false)
+  const [backLoading, setBackLoading] = useState(false)
 
   useEffect(() => {
     if (!song.drive_folder_url) return
@@ -246,7 +247,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         {/* Back + Edit */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => { setBackLoading(true); router.push('/') }}
             onMouseDown={() => setBackActive(true)}
             onMouseUp={() => setBackActive(false)}
             onMouseLeave={() => setBackActive(false)}
@@ -254,9 +255,16 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
             onTouchEnd={() => setBackActive(false)}
             style={{ width: 36, height: 36, borderRadius: '50%', background: backActive ? '#e3e0d8' : '#ffffff', border: '1px solid #e3e0d8', boxShadow: backActive ? 'none' : '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0, transform: backActive ? 'scale(0.93)' : 'scale(1)', transition: 'background 0.1s, transform 0.1s, box-shadow 0.1s' }}
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#4a4850" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 2L4 7l5 5"/>
-            </svg>
+            {backLoading ? (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ animation: 'spin 0.7s linear infinite' }}>
+                <circle cx="7" cy="7" r="5" stroke="#d6d0c8" strokeWidth="2"/>
+                <path d="M7 2a5 5 0 0 1 5 5" stroke="#4a4850" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#4a4850" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 2L4 7l5 5"/>
+              </svg>
+            )}
           </button>
           {isEditor && (
             <button
