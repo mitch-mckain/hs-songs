@@ -11,16 +11,24 @@ import NotesEditor from '@/components/NotesEditor'
 const AlphaTabViewer = dynamic(() => import('@/components/AlphaTabViewer'), { ssr: false })
 import type { Song, SongChord, SongStructureRow } from '@/types/database'
 
-// Strip Quill-specific artifacts that cause layout issues on mobile:
-// - ql-ui spans (bullet glyphs we handle via CSS lists)
-// - inline white-space styles (Quill uses pre-wrap which prevents wrapping)
-// - empty spans left behind by cursor/composition
+// Use browser DOM parser to reliably clean Quill HTML artifacts
 function cleanNotesHtml(html: string): string {
-  return html
-    .replace(/<span[^>]*class="[^"]*ql-ui[^"]*"[^>]*>.*?<\/span>/g, '')
-    .replace(/white-space\s*:\s*[^;'"]+;?\s*/gi, '')
-    .replace(/style=""\s*/g, '')
-    .replace(/<span[^>]*>\s*<\/span>/g, '')
+  if (typeof document === 'undefined') return html
+  const div = document.createElement('div')
+  div.innerHTML = html
+  // Remove ql-ui bullet glyph spans
+  div.querySelectorAll('.ql-ui').forEach(el => el.remove())
+  // Strip ALL inline styles — Quill adds white-space:pre-wrap and others that break layout
+  div.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'))
+  // Unwrap plain spans (no class, no style) — Quill leaves cursor/composition spans
+  div.querySelectorAll('span').forEach(span => {
+    if (!span.className && !span.getAttribute('style')) {
+      span.replaceWith(...Array.from(span.childNodes))
+    }
+  })
+  // Remove stray <br> inside list items (Quill can insert these mid-word on mobile save)
+  div.querySelectorAll('li br').forEach(br => br.replaceWith(' '))
+  return div.innerHTML
 }
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
