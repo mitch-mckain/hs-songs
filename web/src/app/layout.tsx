@@ -24,6 +24,15 @@ const ibmPlexSans = IBM_Plex_Sans({
 export const metadata: Metadata = {
   title: 'Heavy Sweater Resource',
   description: 'Band internal song tool',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Heavy Sweater',
+  },
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
