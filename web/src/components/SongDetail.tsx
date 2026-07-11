@@ -372,7 +372,30 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         {/* ── NOTES ── */}
         {(driveNotesHtml || driveNotesLoading || song.notes) && (
           <div style={{ marginBottom: 32 }}>
-            <SectionHeader title="Notes" open={notesOpen} onToggle={() => setNotesOpen(o => !o)} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: notesOpen ? 18 : 0 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: '#1a1a1f', flexShrink: 0 }} />
+              <span
+                onClick={() => setNotesOpen(o => !o)}
+                style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a1f', textTransform: 'uppercase', letterSpacing: '0.01em', lineHeight: 1.3, cursor: 'pointer', flexShrink: 0 }}
+              >Notes</span>
+              <div style={{ flex: 1, height: 1, background: '#e3e0d8', cursor: 'pointer' }} onClick={() => setNotesOpen(o => !o)} />
+              {notesDocFile && (
+                <a
+                  href={notesDocFile.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#4a4850', textDecoration: 'none', border: '1px solid #e3e0d8', borderRadius: 8, padding: '5px 10px', flexShrink: 0 }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24"><rect width="24" height="24" rx="2" fill="#4285f4"/><rect x="6" y="6" width="12" height="1.6" fill="#fff"/><rect x="6" y="10" width="12" height="1.6" fill="#fff"/><rect x="6" y="14" width="8" height="1.6" fill="#fff"/></svg>
+                  Notes doc <span style={{ fontSize: 11, color: '#8a8790' }}>↗</span>
+                </a>
+              )}
+              <span
+                onClick={() => setNotesOpen(o => !o)}
+                style={{ fontSize: 12, color: '#8a8790', display: 'inline-block', transform: notesOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}
+              >▸</span>
+            </div>
             {notesOpen && (
               <div style={{ borderLeft: '2px solid #e3e0d8', paddingLeft: 14 }}>
                 {driveNotesLoading ? (
