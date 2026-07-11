@@ -97,9 +97,6 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
   const [driveNotes, setDriveNotes] = useState<string | null>(null)
   const [driveNotesLoading, setDriveNotesLoading] = useState(false)
 
-  const [notesValue, setNotesValue] = useState(song.notes ?? '')
-  const [notesEditing, setNotesEditing] = useState(false)
-  const [notesSaving, setNotesSaving] = useState(false)
 
   const [demoOpen, setDemoOpen] = useState(true)
   const [notesOpen, setNotesOpen] = useState(true)
@@ -373,55 +370,25 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
         </div>
 
         {/* ── NOTES ── */}
-        {(driveNotes || driveNotesLoading || song.notes || isEditor) && (
+        {(driveNotes || driveNotesLoading || song.notes) && (
           <div style={{ marginBottom: 32 }}>
             <SectionHeader title="Notes" open={notesOpen} onToggle={() => setNotesOpen(o => !o)} />
             {notesOpen && (
-              driveNotes || driveNotesLoading ? (
-                /* Drive doc notes */
-                <div style={{ borderLeft: '2px solid #e3e0d8', paddingLeft: 14 }}>
-                  {driveNotesLoading ? (
-                    <div style={{ fontSize: 13, color: '#8a8790', fontStyle: 'italic' }}>Loading notes…</div>
-                  ) : (
-                    <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 14.5, lineHeight: 1.6, color: '#4a4850', whiteSpace: 'pre-wrap', wordBreak: 'normal', overflowWrap: 'break-word' }}>
-                      {driveNotes}
-                    </pre>
-                  )}
-                </div>
-              ) : notesEditing ? (
-                <NotesEditor
-                  value={notesValue}
-                  onChange={setNotesValue}
-                  onBlur={async () => {
-                    setNotesEditing(false)
-                    if (notesValue === (song.notes ?? '')) return
-                    setNotesSaving(true)
-                    await fetch(`/api/songs/${song.id}`, {
-                      method: 'PATCH',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ notes: notesValue || null }),
-                    })
-                    setNotesSaving(false)
-                  }}
-                  minHeight={120}
-                />
-              ) : (
-                <div
-                  onClick={() => isEditor && setNotesEditing(true)}
-                  style={{ cursor: isEditor ? 'text' : 'default', minHeight: isEditor ? 40 : undefined, borderLeft: '2px solid #e3e0d8', paddingLeft: 14, minWidth: 0, maxWidth: '100%' }}
-                >
-                  {notesValue ? (
-                    <div
-                      className="song-notes"
-                      style={{ fontSize: 14.5, lineHeight: 1.6, color: '#4a4850' }}
-                      dangerouslySetInnerHTML={{ __html: cleanNotesHtml(notesValue) }}
-                    />
-                  ) : (
-                    <div style={{ fontSize: 14, color: '#a4917a', padding: '6px 0' }}>{isEditor ? 'Click to add notes…' : ''}</div>
-                  )}
-                  {notesSaving && <span style={{ fontSize: 12, color: '#a4917a' }}>Saving…</span>}
-                </div>
-              )
+              <div style={{ borderLeft: '2px solid #e3e0d8', paddingLeft: 14 }}>
+                {driveNotesLoading ? (
+                  <div style={{ fontSize: 13, color: '#8a8790', fontStyle: 'italic' }}>Loading notes…</div>
+                ) : driveNotes ? (
+                  <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 14.5, lineHeight: 1.6, color: '#4a4850', whiteSpace: 'pre-wrap', wordBreak: 'normal', overflowWrap: 'break-word' }}>
+                    {driveNotes}
+                  </pre>
+                ) : song.notes ? (
+                  <div
+                    className="song-notes"
+                    style={{ fontSize: 14.5, lineHeight: 1.6, color: '#4a4850' }}
+                    dangerouslySetInnerHTML={{ __html: cleanNotesHtml(song.notes) }}
+                  />
+                ) : null}
+              </div>
             )}
           </div>
         )}
