@@ -29,7 +29,7 @@ body {
 
 
 /* Notes read view */
-.song-notes { display: block; width: 100%; max-width: 100%; overflow-wrap: break-word; word-break: break-word; overflow: hidden; }
+.song-notes { display: block; width: 100%; max-width: 100%; overflow-wrap: break-word; word-break: normal; overflow: hidden; }
 .song-notes p { margin: 0 0 6px; }
 .song-notes ol, .song-notes ul { list-style: disc; padding-left: 20px; margin: 4px 0 8px; }
 .song-notes li { margin-bottom: 3px; }
