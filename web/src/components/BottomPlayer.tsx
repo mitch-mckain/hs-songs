@@ -105,7 +105,7 @@ export default function BottomPlayer() {
       </div>
 
       {/* Mobile layout */}
-      <div className="bp-mobile" style={{ display: 'none', padding: '12px 16px 16px', flexDirection: 'column', gap: 10 }}>
+      <div className="bp-mobile" style={{ display: 'none', padding: '14px 16px 28px', flexDirection: 'column', gap: 12 }}>
         {/* Row 1: song info + close */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -114,16 +114,37 @@ export default function BottomPlayer() {
           </div>
           {closeBtn}
         </div>
-        {/* Row 2: controls */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
-          {prevBtn}
-          {playBtn}
-          {nextBtn}
-        </div>
-        {/* Row 3: progress + time */}
+        {/* Row 2: progress + time */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {progressBar}
           {timeDisplay}
+        </div>
+        {/* Row 3: controls */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
+          <button onClick={playPrev} title="Previous song" style={{ background: 'none', border: 'none', color: '#b8b5be', cursor: 'pointer', padding: 8 }}>
+            <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="1" y="2" width="3" height="12" rx="1"/>
+              <polygon points="15,2 6,8 15,14"/>
+            </svg>
+          </button>
+          <button onClick={togglePlay} style={{ width: 52, height: 52, borderRadius: '50%', border: 'none', background: '#17181c', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {playing ? (
+              <svg width="18" height="18" viewBox="0 0 14 14" fill="currentColor">
+                <rect x="2" y="1" width="4" height="12" rx="1"/>
+                <rect x="8" y="1" width="4" height="12" rx="1"/>
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 14 14" fill="currentColor" style={{ marginLeft: 2 }}>
+                <polygon points="2,1 13,7 2,13"/>
+              </svg>
+            )}
+          </button>
+          <button onClick={playNext} title="Next song" style={{ background: 'none', border: 'none', color: '#b8b5be', cursor: 'pointer', padding: 8 }}>
+            <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor">
+              <polygon points="1,2 10,8 1,14"/>
+              <rect x="12" y="2" width="3" height="12" rx="1"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
