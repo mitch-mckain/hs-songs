@@ -265,7 +265,7 @@ export default function LibraryView({ songs, role }: Props) {
                   )}
                   <button
                     onClick={() => { setMenuOpen(false); signOut() }}
-                    style={{ width: '100%', height: 62, borderRadius: 14, border: 'none', background: '#c0392b', color: '#ffffff', fontSize: 17, fontWeight: 700, fontFamily: 'var(--font-display), Archivo, sans-serif', cursor: 'pointer', letterSpacing: '-0.01em' }}
+                    style={{ width: '100%', height: 62, borderRadius: 14, border: 'none', background: '#FCDEDE', color: '#7A2828', fontSize: 17, fontWeight: 700, fontFamily: 'var(--font-display), Archivo, sans-serif', cursor: 'pointer', letterSpacing: '-0.01em' }}
                   >
                     Sign Out
                   </button>
