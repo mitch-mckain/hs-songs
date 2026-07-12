@@ -26,6 +26,16 @@ export default function BottomPlayer() {
     if (isEditRoute) close()
   }, [isEditRoute])
 
+  // Clear scrubbing only once audio currentTime has caught up to the seek target,
+  // preventing the dot from flashing back to the old position on release.
+  useEffect(() => {
+    if (!scrubbing || duration <= 0) return
+    const target = scrubFractionRef.current * duration
+    if (Math.abs(currentTime - target) < 1.0) {
+      setScrubbing(false)
+    }
+  }, [currentTime, scrubbing, duration])
+
   if (!track) return null
   if (isEditRoute) return null
 
@@ -52,7 +62,6 @@ export default function BottomPlayer() {
       setScrubFraction(fv)
     }
     function onUp() {
-      setScrubbing(false)
       seek(scrubFractionRef.current)
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
@@ -77,7 +86,6 @@ export default function BottomPlayer() {
   }
 
   function handleTouchEnd() {
-    setScrubbing(false)
     seek(scrubFractionRef.current)
   }
 
