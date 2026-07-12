@@ -277,7 +277,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
     <button
       className={`mobile-back-to-top${stickyVisible ? ' visible' : ''}`}
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      style={{ width: 40, height: 40, borderRadius: '50%', background: '#1a1a1f', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}
+      style={{ width: 40, height: 40, borderRadius: '50%', background: '#1a1a1f', border: 'none', cursor: 'pointer', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M2 9L7 4l5 5"/>
