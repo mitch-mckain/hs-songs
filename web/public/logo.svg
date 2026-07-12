@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="1024" height="1024">
+<defs>
+
+</defs>
+
+        <rect width="100" height="100" fill="#151312"></rect>
+        <g transform="rotate(-6 50 50)">
+          <rect x="10" y="24" width="80" height="52" rx="9" fill="#F5F1E8"></rect>
+          <rect x="22" y="40" width="56" height="24" rx="12" fill="#151312"></rect>
+          <line x1="36" y1="46" x2="64" y2="46" stroke="#F5F1E8" stroke-width="2.5"></line>
+          <line x1="36" y1="58" x2="64" y2="58" stroke="#F5F1E8" stroke-width="2.5"></line>
+          <circle cx="36" cy="52" r="7.5" fill="#F5F1E8"></circle>
+          <circle cx="36" cy="52" r="3" fill="#151312"></circle>
+          <circle cx="64" cy="52" r="7.5" fill="#F5F1E8"></circle>
+          <circle cx="64" cy="52" r="3" fill="#151312"></circle>
+          <text x="50" y="35.5" text-anchor="middle" font-family="&#39;Archivo Black&#39;, sans-serif" font-weight="400" font-size="11" fill="#151312">DEMO</text>
+          <text x="50" y="71.4" text-anchor="middle" font-family="&#39;Space Grotesk&#39;, sans-serif" font-weight="700" font-size="3.4" letter-spacing="1.2" fill="#151312">HEAVY SWEATER</text>
+        </g>
+      
+</svg>

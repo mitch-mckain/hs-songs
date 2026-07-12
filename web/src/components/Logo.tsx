@@ -4,27 +4,20 @@ interface Props {
 
 export default function Logo({ size = 40 }: Props) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 112 112">
-      <defs>
-        <path id="gs30a" d="M0,-10 L2,-6.5 L5.9,-7.7 L5.7,-4 L9.5,-3.2 L7.3,0 L9.5,3.2 L5.7,4 L5.9,7.7 L2,6.5 L0,10 L-2,6.5 L-5.9,7.7 L-5.7,4 L-9.5,3.2 L-7.3,0 L-9.5,-3.2 L-5.7,-4 L-5.9,-7.7 L-2,-6.5 Z"/>
-      </defs>
-      <rect x="0" y="0" width="112" height="112" rx="26" fill="#FDFBF6"/>
-      <rect x="0" y="0" width="112" height="112" rx="26" fill="none" stroke="#E7E2D6" strokeWidth="1.5"/>
-      <rect x="10" y="24" width="92" height="64" rx="10" fill="#1a1a1f"/>
-      <circle cx="18" cy="31" r="1.9" fill="#FDFBF6"/>
-      <circle cx="94" cy="31" r="1.9" fill="#FDFBF6"/>
-      <circle cx="18" cy="81" r="1.9" fill="#FDFBF6"/>
-      <circle cx="94" cy="81" r="1.9" fill="#FDFBF6"/>
-      <rect x="24" y="30" width="64" height="15" rx="3" fill="#FDFBF6"/>
-      <line x1="30" y1="35" x2="58" y2="35" stroke="#c7c3ba" strokeWidth="1.2" strokeLinecap="round"/>
-      <line x1="30" y1="40" x2="76" y2="40" stroke="#c7c3ba" strokeWidth="1.2" strokeLinecap="round"/>
-      <rect x="47" y="67.5" width="18" height="3" rx="1.5" fill="#3a2b1e" fillOpacity="0.85"/>
-      <use href="#gs30a" x="37" y="69" fill="#FDFBF6"/>
-      <use href="#gs30a" x="75" y="69" fill="#FDFBF6"/>
-      <circle cx="37" cy="69" r="3.6" fill="#1a1a1f"/>
-      <circle cx="75" cy="69" r="3.6" fill="#1a1a1f"/>
-      <rect x="26" y="84.5" width="7" height="3.2" rx="1" fill="#FDFBF6"/>
-      <rect x="79" y="84.5" width="7" height="3.2" rx="1" fill="#FDFBF6"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width={size} height={size}>
+      <rect width="100" height="100" fill="#151312"/>
+      <g transform="rotate(-6 50 50)">
+        <rect x="10" y="24" width="80" height="52" rx="9" fill="#F5F1E8"/>
+        <rect x="22" y="40" width="56" height="24" rx="12" fill="#151312"/>
+        <line x1="36" y1="46" x2="64" y2="46" stroke="#F5F1E8" strokeWidth="2.5"/>
+        <line x1="36" y1="58" x2="64" y2="58" stroke="#F5F1E8" strokeWidth="2.5"/>
+        <circle cx="36" cy="52" r="7.5" fill="#F5F1E8"/>
+        <circle cx="36" cy="52" r="3" fill="#151312"/>
+        <circle cx="64" cy="52" r="7.5" fill="#F5F1E8"/>
+        <circle cx="64" cy="52" r="3" fill="#151312"/>
+        <text x="50" y="35.5" textAnchor="middle" fontFamily="'Archivo Black', sans-serif" fontWeight="400" fontSize="11" fill="#151312">DEMO</text>
+        <text x="50" y="71.4" textAnchor="middle" fontFamily="'Space Grotesk', sans-serif" fontWeight="700" fontSize="3.4" letterSpacing="1.2" fill="#151312">HEAVY SWEATER</text>
+      </g>
     </svg>
   )
 }
