@@ -248,12 +248,23 @@ export default function LibraryView({ songs, role }: Props) {
                 background: '#ffffff',
                 borderRadius: '20px 20px 0 0',
                 padding: '12px 20px',
-                paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
+                paddingBottom: 'calc(40px + env(safe-area-inset-bottom))',
                 boxShadow: '0 -8px 32px rgba(0,0,0,0.14)',
                 animation: 'tray-in 0.28s cubic-bezier(0.32,0.72,0,1)',
               }}>
-                {/* Handle */}
-                <div style={{ width: 40, height: 4, borderRadius: 2, background: '#e3e0d8', margin: '0 auto 24px' }} />
+                {/* Handle + close row */}
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 28 }}>
+                  <div style={{ flex: 1 }} />
+                  <div style={{ width: 40, height: 4, borderRadius: 2, background: '#e3e0d8', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
+                  <button
+                    onClick={() => setMenuOpen(false)}
+                    style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid #e3e0d8', background: '#f5f3ee', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#4a4850" strokeWidth="1.8" strokeLinecap="round">
+                      <path d="M1 1l10 10M11 1L1 11"/>
+                    </svg>
+                  </button>
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {isEditor && (
                     <button
