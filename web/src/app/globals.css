@@ -122,11 +122,11 @@ body {
 
 /* Mobile sticky song header */
 .mobile-sticky-header { display: none; }
-.mobile-back-to-top { display: none; }
+.mobile-back-to-top { display: none !important; }
 
 @media (max-width: 640px) {
   .mobile-back-to-top {
-    display: flex;
+    display: flex !important;
     position: fixed;
     bottom: calc(88px + env(safe-area-inset-bottom));
     right: 16px;
