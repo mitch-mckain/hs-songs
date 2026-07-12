@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { usePlayer } from '@/context/PlayerContext'
 
@@ -24,18 +24,64 @@ export default function BottomPlayer() {
   if (!track) return null
   if (isEditRoute) return null
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+  // Scrub state — decouple visual position from audio seeking during drag
+  const [scrubbing, setScrubbing] = useState(false)
+  const [scrubFraction, setScrubFraction] = useState(0)
+  const scrubFractionRef = useRef(0)
+  const isDraggingRef = useRef(false)
 
-  function handleProgressClick(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.getBoundingClientRect()
-    seek((e.clientX - rect.left) / rect.width)
+  const audioProgress = duration > 0 ? (currentTime / duration) * 100 : 0
+  const progress = scrubbing ? scrubFraction * 100 : audioProgress
+
+  function getFraction(clientX: number, el: Element) {
+    const rect = el.getBoundingClientRect()
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   }
 
-  function handleTouchScrub(e: React.TouchEvent<HTMLDivElement>) {
+  // Desktop: click to seek instantly, drag for smooth scrub
+  function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
+    const f = getFraction(e.clientX, e.currentTarget)
+    scrubFractionRef.current = f
+    isDraggingRef.current = true
+    setScrubbing(true)
+    setScrubFraction(f)
+
+    function onMove(ev: MouseEvent) {
+      const bar = document.querySelector('.progress-bar-desktop')
+      if (!bar) return
+      const fv = getFraction(ev.clientX, bar)
+      scrubFractionRef.current = fv
+      setScrubFraction(fv)
+    }
+    function onUp() {
+      isDraggingRef.current = false
+      setScrubbing(false)
+      seek(scrubFractionRef.current)
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
+  // Touch: update visual only, seek once on release
+  function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
+    const f = getFraction(e.touches[0].clientX, e.currentTarget)
+    scrubFractionRef.current = f
+    setScrubbing(true)
+    setScrubFraction(f)
+  }
+
+  function handleTouchMove(e: React.TouchEvent<HTMLDivElement>) {
     e.preventDefault()
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.touches[0].clientX
-    seek(Math.max(0, Math.min(1, (x - rect.left) / rect.width)))
+    const f = getFraction(e.touches[0].clientX, e.currentTarget)
+    scrubFractionRef.current = f
+    setScrubFraction(f)
+  }
+
+  function handleTouchEnd() {
+    setScrubbing(false)
+    seek(scrubFractionRef.current)
   }
 
   const prevBtn = (
@@ -72,23 +118,27 @@ export default function BottomPlayer() {
   )
 
   const progressBar = (
-    <div onClick={handleProgressClick} style={{ flex: 1, height: 32, display: 'flex', alignItems: 'center', position: 'relative', cursor: 'pointer' }}>
+    <div
+      className="progress-bar-desktop"
+      onMouseDown={handleMouseDown}
+      style={{ flex: 1, height: 32, display: 'flex', alignItems: 'center', position: 'relative', cursor: 'pointer', userSelect: 'none' }}
+    >
       <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: '#e3e0d8', borderRadius: 1 }} />
       <div style={{ position: 'absolute', left: 0, height: 2, width: `${progress}%`, background: '#1a1a1f', borderRadius: 1 }} />
-      <div style={{ position: 'absolute', left: `${progress}%`, width: 11, height: 11, marginLeft: -5.5, borderRadius: '50%', background: '#1a1a1f' }} />
+      <div style={{ position: 'absolute', left: `${progress}%`, width: 11, height: 11, marginLeft: -5.5, borderRadius: '50%', background: '#1a1a1f', transform: scrubbing ? 'scale(1.4)' : 'scale(1)', transition: scrubbing ? 'none' : 'transform 0.1s' }} />
     </div>
   )
 
   const progressBarTouch = (
     <div
-      onClick={handleProgressClick}
-      onTouchStart={handleTouchScrub}
-      onTouchMove={handleTouchScrub}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       style={{ flex: 1, height: 44, display: 'flex', alignItems: 'center', position: 'relative', cursor: 'pointer', touchAction: 'none' }}
     >
       <div style={{ position: 'absolute', left: 0, right: 0, height: 3, background: '#e3e0d8', borderRadius: 2 }} />
       <div style={{ position: 'absolute', left: 0, height: 3, width: `${progress}%`, background: '#1a1a1f', borderRadius: 2 }} />
-      <div style={{ position: 'absolute', left: `${progress}%`, width: 22, height: 22, marginLeft: -11, borderRadius: '50%', background: '#1a1a1f' }} />
+      <div style={{ position: 'absolute', left: `${progress}%`, width: 22, height: 22, marginLeft: -11, borderRadius: '50%', background: '#1a1a1f', transform: scrubbing ? 'scale(1.2)' : 'scale(1)', transition: scrubbing ? 'none' : 'transform 0.15s' }} />
     </div>
   )
 
