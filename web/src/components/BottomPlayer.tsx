@@ -17,18 +17,17 @@ export default function BottomPlayer() {
 
   const isEditRoute = pathname?.includes('/edit') || pathname?.includes('/new')
 
+  // All hooks must be before any early returns
+  const [scrubbing, setScrubbing] = useState(false)
+  const [scrubFraction, setScrubFraction] = useState(0)
+  const scrubFractionRef = useRef(0)
+
   useEffect(() => {
     if (isEditRoute) close()
   }, [isEditRoute])
 
   if (!track) return null
   if (isEditRoute) return null
-
-  // Scrub state — decouple visual position from audio seeking during drag
-  const [scrubbing, setScrubbing] = useState(false)
-  const [scrubFraction, setScrubFraction] = useState(0)
-  const scrubFractionRef = useRef(0)
-  const isDraggingRef = useRef(false)
 
   const audioProgress = duration > 0 ? (currentTime / duration) * 100 : 0
   const progress = scrubbing ? scrubFraction * 100 : audioProgress
@@ -42,8 +41,7 @@ export default function BottomPlayer() {
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
     const f = getFraction(e.clientX, e.currentTarget)
     scrubFractionRef.current = f
-    isDraggingRef.current = true
-    setScrubbing(true)
+        setScrubbing(true)
     setScrubFraction(f)
 
     function onMove(ev: MouseEvent) {
@@ -54,7 +52,6 @@ export default function BottomPlayer() {
       setScrubFraction(fv)
     }
     function onUp() {
-      isDraggingRef.current = false
       setScrubbing(false)
       seek(scrubFractionRef.current)
       window.removeEventListener('mousemove', onMove)
