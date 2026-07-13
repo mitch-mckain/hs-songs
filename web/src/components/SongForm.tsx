@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { getChordShapes, buildDiagramData, type ChordShape } from '@/lib/chords'
 import ChordDiagram from '@/components/ChordDiagram'
 import CustomChordBuilder from '@/components/CustomChordBuilder'
-import NotesEditor from '@/components/NotesEditor'
 import type { Song, SongChord, SongStructureRow } from '@/types/database'
 
 const TUNING_OPTIONS = ['Std', 'Eb std', 'D std', 'Drop D', 'D A D F# A D', 'D A E A C# E']
@@ -127,7 +126,6 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
 
   // Files
   const [driveFolderUrl, setDriveFolderUrl] = useState(initialSong?.drive_folder_url ?? '')
-  const [notes, setNotes] = useState(initialSong?.notes ?? '')
 
 
 
@@ -245,7 +243,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
     setSaving(true)
     try {
       const payload = {
-        song: { title, status, album, key, bpm, time_signature: timeSignature, capo, tuning, drive_folder_url: driveFolderUrl, notes },
+        song: { title, status, album, key, bpm, time_signature: timeSignature, capo, tuning, drive_folder_url: driveFolderUrl },
         chords: addedChords.map(c => ({ id: c.id, name: c.name, strings: c.strings, barre: c.barre })),
         structureRows: structureRows.map(r => ({
           section_label: r.section_label,
@@ -348,11 +346,6 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
         The app will auto-detect the Logic project, lyrics doc, GP tab, and practice recordings from this folder.
       </div>
 
-      {/* ── NOTES ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 32 }}>
-        <label style={labelStyle}>Notes</label>
-        <NotesEditor value={notes} onChange={setNotes} minHeight={140} />
-      </div>
 
 
       {/* ── CHORDS ── */}
