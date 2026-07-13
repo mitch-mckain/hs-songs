@@ -34,7 +34,7 @@ function LoginContent() {
                 Heavy Sweater
               </div>
               <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11, color: '#b8b5be', marginTop: 4, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                Band Resource
+                Song Database
               </div>
             </div>
           </div>
