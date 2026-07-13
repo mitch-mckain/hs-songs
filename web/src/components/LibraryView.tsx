@@ -197,11 +197,10 @@ export default function LibraryView({ songs, role }: Props) {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 40, flexWrap: 'wrap' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#8a8790' }}>Band Database</span>
-              <span style={{ fontSize: 10, color: '#b8b5be' }}>Heavy Sweater</span>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#8a8790' }}>Song Database</span>
             </div>
             <h1 style={{ fontFamily: 'var(--font-display), Archivo, sans-serif', fontWeight: 800, fontSize: 'clamp(26px,7vw,38px)', color: '#1a1a1f', letterSpacing: '-0.04em', margin: 0 }}>
-              Song Dashboard
+              Library
             </h1>
           </div>
           {/* Desktop buttons */}
