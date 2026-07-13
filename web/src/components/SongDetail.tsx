@@ -7,7 +7,6 @@ import { buildDiagramData, transposeChordName, transposeShape } from '@/lib/chor
 import ChordDiagram from '@/components/ChordDiagram'
 import WaveformPlayer from '@/components/WaveformPlayer'
 import dynamic from 'next/dynamic'
-import NotesEditor from '@/components/NotesEditor'
 
 const AlphaTabViewer = dynamic(() => import('@/components/AlphaTabViewer'), { ssr: false })
 import type { Song, SongChord, SongStructureRow } from '@/types/database'
