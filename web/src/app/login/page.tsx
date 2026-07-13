@@ -51,7 +51,7 @@ function LoginContent() {
 
           {/* Sign in prompt */}
           <p style={{ fontFamily: 'var(--font-ui), sans-serif', fontSize: 13, color: '#8a8790', textAlign: 'center', marginBottom: 20, lineHeight: 1.5 }}>
-            Sign in with your Heavy Sweater Google account to continue.
+            Sign in with your Google account to continue.
           </p>
 
           {/* Google button */}
@@ -87,10 +87,6 @@ function LoginContent() {
           </button>
         </div>
 
-        {/* Footer note */}
-        <p style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 10, color: '#c9c6bc', textAlign: 'center', marginTop: 20, letterSpacing: '0.02em' }}>
-          Internal use only
-        </p>
 
       </div>
     </div>
