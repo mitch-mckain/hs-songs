@@ -5,17 +5,22 @@ interface Props {
 export default function Logo({ size = 40 }: Props) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width={size} height={size}>
+      <defs>
+        <mask id="mask-cass-w">
+          <g transform="rotate(-6 50 50)">
+            <rect x="10" y="24" width="80" height="52" rx="9" fill="#FFFFFF"/>
+            <rect x="16" y="35" width="68" height="30" rx="15" fill="#000000"/>
+            <line x1="32" y1="42.5" x2="68" y2="42.5" stroke="#FFFFFF" strokeWidth="3"/>
+            <line x1="32" y1="57.5" x2="68" y2="57.5" stroke="#FFFFFF" strokeWidth="3"/>
+            <circle cx="32" cy="50" r="9.5" fill="#FFFFFF"/>
+            <circle cx="32" cy="50" r="3.8" fill="#000000"/>
+            <circle cx="68" cy="50" r="9.5" fill="#FFFFFF"/>
+            <circle cx="68" cy="50" r="3.8" fill="#000000"/>
+          </g>
+        </mask>
+      </defs>
       <rect width="100" height="100" rx="20" fill="#151312"/>
-      <g transform="rotate(-6 50 50)">
-        <rect x="10" y="24" width="80" height="52" rx="9" fill="#FFFFFF"/>
-        <rect x="22" y="40" width="56" height="24" rx="12" fill="#151312"/>
-        <line x1="36" y1="46" x2="64" y2="46" stroke="#FFFFFF" strokeWidth="2.5"/>
-        <line x1="36" y1="58" x2="64" y2="58" stroke="#FFFFFF" strokeWidth="2.5"/>
-        <circle cx="36" cy="52" r="7.5" fill="#FFFFFF"/>
-        <circle cx="36" cy="52" r="3" fill="#151312"/>
-        <circle cx="64" cy="52" r="7.5" fill="#FFFFFF"/>
-        <circle cx="64" cy="52" r="3" fill="#151312"/>
-      </g>
+      <rect width="100" height="100" rx="20" fill="#FFFFFF" mask="url(#mask-cass-w)"/>
     </svg>
   )
 }
