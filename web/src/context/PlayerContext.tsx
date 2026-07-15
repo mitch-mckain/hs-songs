@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useRef, useState, useCallback } from 'react'
+import { createContext, useContext, useRef, useState, useCallback, useEffect } from 'react'
 
 interface PlayerTrack {
   songId: string
@@ -107,6 +107,45 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setPlaying(false)
     setCurrentTime(0)
     setDuration(0)
+  }, [])
+
+  // Media Session API — lock screen controls
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return
+    if (!track) { navigator.mediaSession.metadata = null; return }
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.songTitle,
+      artist: 'Heavy Sweater',
+      artwork: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    })
+  }, [track])
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return
+    navigator.mediaSession.playbackState = playing ? 'playing' : 'paused'
+  }, [playing])
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || duration <= 0) return
+    try {
+      navigator.mediaSession.setPositionState({ duration, playbackRate: 1, position: Math.min(currentTime, duration) })
+    } catch {}
+  }, [currentTime, duration])
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return
+    navigator.mediaSession.setActionHandler('play', () => { audioRef.current?.play() })
+    navigator.mediaSession.setActionHandler('pause', () => { audioRef.current?.pause() })
+    navigator.mediaSession.setActionHandler('nexttrack', () => { onEndedRef.current?.() })
+    navigator.mediaSession.setActionHandler('previoustrack', () => { onPrevRef.current?.() })
+    navigator.mediaSession.setActionHandler('seekto', (d) => {
+      if (d.seekTime != null && audioRef.current) audioRef.current.currentTime = d.seekTime
+    })
+    return () => {
+      (['play', 'pause', 'nexttrack', 'previoustrack', 'seekto'] as MediaSessionAction[]).forEach(a => {
+        try { navigator.mediaSession.setActionHandler(a, null) } catch {}
+      })
+    }
   }, [])
 
   return (
