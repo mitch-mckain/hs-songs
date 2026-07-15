@@ -23,6 +23,7 @@ interface PlayerContextValue {
   playNext: () => void
   setOnPrev: (cb: (() => void) | null) => void
   playPrev: () => void
+  queueNextTrack: (track: PlayerTrack | null) => void
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null)
@@ -31,6 +32,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const onEndedRef = useRef<(() => void) | null>(null)
   const onPrevRef = useRef<(() => void) | null>(null)
+  const queuedNextTrackRef = useRef<PlayerTrack | null>(null)
+  const preSwitchDoneRef = useRef(false)
   const [track, setTrack] = useState<PlayerTrack | null>(null)
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -52,9 +55,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     onPrevRef.current?.()
   }, [])
 
+  const queueNextTrack = useCallback((nextTrack: PlayerTrack | null) => {
+    queuedNextTrackRef.current = nextTrack
+    if (nextTrack) preSwitchDoneRef.current = false
+  }, [])
+
   const play = useCallback((newTrack: PlayerTrack) => {
     const audio = audioRef.current
     if (!audio) return
+
+    // Reset pre-switch state on manual track selection
+    queuedNextTrackRef.current = null
+    preSwitchDoneRef.current = false
 
     const url = `/api/drive/stream/${newTrack.fileId}`
 
@@ -148,11 +160,27 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <PlayerContext.Provider value={{ track, playing, currentTime, duration, play, togglePlay, seek, close, audioRef, setOnEnded, playNext, setOnPrev, playPrev }}>
+    <PlayerContext.Provider value={{ track, playing, currentTime, duration, play, togglePlay, seek, close, audioRef, setOnEnded, playNext, setOnPrev, playPrev, queueNextTrack }}>
       {children}
       <audio
         ref={audioRef}
-        onTimeUpdate={e => setCurrentTime(e.currentTarget.currentTime)}
+        onTimeUpdate={e => {
+          const audio = e.currentTarget
+          setCurrentTime(audio.currentTime)
+          // Pre-switch: change src 1.5s before end while audio session is still active (iOS fix)
+          const queued = queuedNextTrackRef.current
+          if (queued && audio.duration > 0 && !preSwitchDoneRef.current) {
+            if (audio.duration - audio.currentTime < 1.5) {
+              preSwitchDoneRef.current = true
+              queuedNextTrackRef.current = null
+              audio.src = `/api/drive/stream/${queued.fileId}`
+              audio.play().catch(() => {})
+              setTrack(queued)
+              setCurrentTime(0)
+              setDuration(0)
+            }
+          }
+        }}
         onDurationChange={e => setDuration(e.currentTarget.duration)}
         onEnded={() => { setPlaying(false); onEndedRef.current?.() }}
         onPause={() => setPlaying(false)}

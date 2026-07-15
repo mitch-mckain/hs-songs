@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { usePlayer } from '@/context/PlayerContext'
@@ -81,7 +81,7 @@ interface Props {
 export default function LibraryView({ songs, role }: Props) {
   const router = useRouter()
   const isEditor = role === 'editor'
-  const { play, track, playing, togglePlay, setOnEnded, setOnPrev } = usePlayer()
+  const { play, track, playing, togglePlay, setOnEnded, setOnPrev, queueNextTrack } = usePlayer()
 
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null)
   const [navigatingSongId, setNavigatingSongId] = useState<string | null>(null)
@@ -90,7 +90,7 @@ export default function LibraryView({ songs, role }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
 
-  useEffect(() => {
+  const orderedSongs = useMemo(() => {
     const filtered = songs.filter(s => {
       const matchSearch = !search || s.title.toLowerCase().includes(search.toLowerCase())
       const matchStatus = statusFilter === 'all' || s.status === statusFilter
@@ -103,8 +103,28 @@ export default function LibraryView({ songs, role }: Props) {
       if (!byAlbum[album]) byAlbum[album] = []
       byAlbum[album].push(s)
     })
-    const orderedSongs = [...demos, ...Object.values(byAlbum).flat()]
+    return [...demos, ...Object.values(byAlbum).flat()]
+  }, [songs, search, statusFilter])
 
+  // Pre-fetch next song's audio file ID so we can switch tracks before end (iOS background audio fix)
+  useEffect(() => {
+    if (!track) return
+    const idx = orderedSongs.findIndex(s => s.id === track.songId)
+    const next = orderedSongs[idx + 1]
+    if (!next?.drive_folder_url) { queueNextTrack(null); return }
+    let cancelled = false
+    fetch(`/api/drive/folder?url=${encodeURIComponent(next.drive_folder_url)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled && data.audioFile) {
+          queueNextTrack({ songId: next.id, songTitle: next.title, fileId: data.audioFile.id, fileName: data.audioFile.name })
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [track, orderedSongs, queueNextTrack])
+
+  useEffect(() => {
     async function fetchAndPlay(song: Song) {
       if (!song.drive_folder_url) return
       const res = await fetch(`/api/drive/folder?url=${encodeURIComponent(song.drive_folder_url)}`)
@@ -129,7 +149,7 @@ export default function LibraryView({ songs, role }: Props) {
     })
 
     return () => { setOnEnded(null); setOnPrev(null) }
-  }, [songs, search, statusFilter, track, setOnEnded, setOnPrev, play])
+  }, [orderedSongs, track, setOnEnded, setOnPrev, play])
 
   async function signOut() {
     const supabase = createClient()
