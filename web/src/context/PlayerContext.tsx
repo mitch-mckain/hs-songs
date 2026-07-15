@@ -70,9 +70,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // New track
+    // New track — don't call load() as it breaks the iOS background audio session
     audio.src = url
-    audio.load()
     audio.play().then(() => setPlaying(true)).catch(() => {})
     setTrack(newTrack)
     setCurrentTime(0)
