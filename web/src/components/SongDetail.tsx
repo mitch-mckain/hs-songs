@@ -247,7 +247,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
 
   const backBtn = (
     <button
-      onClick={() => { setBackLoading(true); window.history.back() }}
+      onClick={() => { window.location.href = '/' }}
       onMouseDown={() => setBackActive(true)}
       onMouseUp={() => setBackActive(false)}
       onMouseLeave={() => setBackActive(false)}
