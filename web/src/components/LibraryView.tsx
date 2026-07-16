@@ -108,8 +108,8 @@ export default function LibraryView({ songs, role }: Props) {
     setNavigatingSongId(null)
     const supabase = createClient()
     const [{ data: chords }, { data: rows }] = await Promise.all([
-      supabase.from('song_chords').select('*').eq('song_id', song.id).order('sort_order'),
-      supabase.from('song_structure_rows').select('*').eq('song_id', song.id).order('sort_order'),
+      supabase.from('song_chords').select('*').eq('song_id', song.id).order('position'),
+      supabase.from('song_structure_rows').select('*').eq('song_id', song.id).order('position'),
     ])
     setOverlay({ song, chords: chords ?? [], structureRows: rows ?? [] })
   }
