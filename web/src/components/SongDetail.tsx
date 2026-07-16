@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { buildDiagramData, transposeChordName, transposeShape } from '@/lib/chords'
 import ChordDiagram from '@/components/ChordDiagram'
@@ -78,7 +77,6 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
 }
 
 export default function SongDetail({ song, chords, structureRows, role }: Props) {
-  const router = useRouter()
   const isEditor = role === 'editor'
   const status = STATUS_STYLES[song.status] ?? STATUS_STYLES.demo
 
@@ -249,7 +247,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
 
   const backBtn = (
     <button
-      onClick={() => { setBackLoading(true); router.push('/') }}
+      onClick={() => { setBackLoading(true); window.history.back() }}
       onMouseDown={() => setBackActive(true)}
       onMouseUp={() => setBackActive(false)}
       onMouseLeave={() => setBackActive(false)}
@@ -300,7 +298,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
                       setDeleting(true)
                       const res = await fetch(`/api/songs/${song.id}`, { method: 'DELETE' })
                       if (res.ok) {
-                        router.push('/')
+                        window.location.href = '/'
                       } else {
                         setDeleting(false)
                         setDeleteConfirm(false)
@@ -320,7 +318,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
               ) : (
                 <>
                   <button
-                    onClick={() => router.push(`/songs/${song.id}/edit`)}
+                    onClick={() => { window.location.href = `/songs/${song.id}/edit` }}
                     style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer', background: '#ffffff', color: '#4a4850', border: '1px solid #e3e0d8', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
                   >
                     Edit song

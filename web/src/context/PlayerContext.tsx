@@ -24,6 +24,7 @@ interface PlayerContextValue {
   setOnPrev: (cb: (() => void) | null) => void
   playPrev: () => void
   queueNextTrack: (track: PlayerTrack | null) => void
+  saveSession: () => void
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null)
@@ -58,6 +59,28 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const queueNextTrack = useCallback((nextTrack: PlayerTrack | null) => {
     queuedNextTrackRef.current = nextTrack
     if (nextTrack) preSwitchDoneRef.current = false
+  }, [])
+
+  // Restore audio session after a full-page navigation
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('hs_player_state')
+      if (!saved) return
+      sessionStorage.removeItem('hs_player_state')
+      const state = JSON.parse(saved) as { track: PlayerTrack; currentTime: number }
+      if (!state.track || !audioRef.current) return
+      const audio = audioRef.current
+      const savedTime = state.currentTime
+      audio.src = `/api/drive/stream/${state.track.fileId}`
+      audio.play()
+        .then(() => {
+          setPlaying(true)
+          // Seek to saved position once enough data is loaded
+          audio.addEventListener('canplay', () => { audio.currentTime = savedTime }, { once: true })
+        })
+        .catch(() => {})
+      setTrack(state.track)
+    } catch {}
   }, [])
 
   const play = useCallback((newTrack: PlayerTrack) => {
@@ -107,6 +130,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (!audio || !duration) return
     audio.currentTime = fraction * duration
   }, [duration])
+
+  const saveSession = useCallback(() => {
+    if (!track || !audioRef.current) return
+    try {
+      sessionStorage.setItem('hs_player_state', JSON.stringify({
+        track,
+        currentTime: audioRef.current.currentTime,
+      }))
+    } catch {}
+  }, [track])
 
   const close = useCallback(() => {
     const audio = audioRef.current
@@ -160,7 +193,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <PlayerContext.Provider value={{ track, playing, currentTime, duration, play, togglePlay, seek, close, audioRef, setOnEnded, playNext, setOnPrev, playPrev, queueNextTrack }}>
+    <PlayerContext.Provider value={{ track, playing, currentTime, duration, play, togglePlay, seek, close, audioRef, setOnEnded, playNext, setOnPrev, playPrev, queueNextTrack, saveSession }}>
       {children}
       <audio
         ref={audioRef}

@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { usePlayer } from '@/context/PlayerContext'
 import type { Song } from '@/types/database'
@@ -79,9 +78,8 @@ interface Props {
 }
 
 export default function LibraryView({ songs, role }: Props) {
-  const router = useRouter()
   const isEditor = role === 'editor'
-  const { play, track, playing, togglePlay, setOnEnded, setOnPrev, queueNextTrack } = usePlayer()
+  const { play, track, playing, togglePlay, setOnEnded, setOnPrev, queueNextTrack, saveSession } = usePlayer()
 
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null)
   const [navigatingSongId, setNavigatingSongId] = useState<string | null>(null)
@@ -154,8 +152,7 @@ export default function LibraryView({ songs, role }: Props) {
   async function signOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    window.location.href = '/login'
   }
 
   async function handlePlayButton(e: React.MouseEvent, song: Song) {
@@ -228,7 +225,7 @@ export default function LibraryView({ songs, role }: Props) {
           <div className="lib-header-btns" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 4 }}>
             {isEditor && (
               <button
-                onClick={() => router.push('/songs/new')}
+                onClick={() => window.location.href = '/songs/new'}
                 style={{ fontSize: 13, fontWeight: 700, padding: '7px 14px', borderRadius: 8, background: '#1a1a1f', color: '#fff', border: 'none', cursor: 'pointer' }}
               >
                 + New song
@@ -288,7 +285,7 @@ export default function LibraryView({ songs, role }: Props) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {isEditor && (
                     <button
-                      onClick={() => { setMenuOpen(false); router.push('/songs/new') }}
+                      onClick={() => { setMenuOpen(false); window.location.href = '/songs/new' }}
                       style={{ width: '100%', height: 62, borderRadius: 14, border: 'none', background: '#1a1a1f', color: '#ffffff', fontSize: 17, fontWeight: 700, fontFamily: 'var(--font-display), Archivo, sans-serif', cursor: 'pointer', letterSpacing: '-0.01em' }}
                     >
                       + New Song
@@ -380,7 +377,7 @@ export default function LibraryView({ songs, role }: Props) {
                   return (
                     <div
                       key={song.id}
-                      onClick={() => { setNavigatingSongId(song.id); router.push(`/songs/${song.id}`) }}
+                      onClick={() => { setNavigatingSongId(song.id); saveSession(); window.location.href = `/songs/${song.id}` }}
                       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 8px', cursor: 'pointer', borderBottom: '1px solid #e3e0d8', background: isNavigating ? '#ece8df' : 'transparent', transition: 'background 0.1s', borderRadius: 8 }}
                       onMouseEnter={e => { if (!isNavigating) e.currentTarget.style.background = '#f5f3ee' }}
                       onMouseLeave={e => { if (!isNavigating) e.currentTarget.style.background = 'transparent' }}
