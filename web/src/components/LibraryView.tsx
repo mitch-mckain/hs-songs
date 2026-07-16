@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { usePlayer } from '@/context/PlayerContext'
-import type { Song } from '@/types/database'
+import SongDetail from '@/components/SongDetail'
+import type { Song, SongChord, SongStructureRow } from '@/types/database'
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   demo:     { bg: '#FBE3B8', color: '#8A5A16', label: 'Demo' },
@@ -83,6 +84,7 @@ export default function LibraryView({ songs, role }: Props) {
 
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null)
   const [navigatingSongId, setNavigatingSongId] = useState<string | null>(null)
+  const [overlay, setOverlay] = useState<{ song: Song; chords: SongChord[]; structureRows: SongStructureRow[] } | null>(null)
 
   // Clear navigation state when page is restored from bfcache (back button)
   useEffect(() => {
@@ -90,6 +92,30 @@ export default function LibraryView({ songs, role }: Props) {
     window.addEventListener('pageshow', handler)
     return () => window.removeEventListener('pageshow', handler)
   }, [])
+
+  // Close overlay on browser back
+  useEffect(() => {
+    const handler = () => { setOverlay(null) }
+    window.addEventListener('popstate', handler)
+    return () => window.removeEventListener('popstate', handler)
+  }, [])
+
+  async function handleSongClick(song: Song) {
+    setNavigatingSongId(song.id)
+    history.pushState(null, '', `/songs/${song.id}`)
+    const supabase = createClient()
+    const [{ data: chords }, { data: rows }] = await Promise.all([
+      supabase.from('song_chords').select('*').eq('song_id', song.id).order('sort_order'),
+      supabase.from('song_structure_rows').select('*').eq('song_id', song.id).order('sort_order'),
+    ])
+    setOverlay({ song, chords: chords ?? [], structureRows: rows ?? [] })
+    setNavigatingSongId(null)
+  }
+
+  function closeOverlay() {
+    history.back()
+    setOverlay(null)
+  }
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'demo' | 'released'>('all')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -384,7 +410,7 @@ export default function LibraryView({ songs, role }: Props) {
                   return (
                     <div
                       key={song.id}
-                      onClick={() => { setNavigatingSongId(song.id); saveSession(); window.location.href = `/songs/${song.id}` }}
+                      onClick={() => handleSongClick(song)}
                       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 8px', cursor: 'pointer', borderBottom: '1px solid #e3e0d8', background: isNavigating ? '#ece8df' : 'transparent', transition: 'background 0.1s', borderRadius: 8 }}
                       onMouseEnter={e => { if (!isNavigating) e.currentTarget.style.background = '#f5f3ee' }}
                       onMouseLeave={e => { if (!isNavigating) e.currentTarget.style.background = 'transparent' }}
@@ -460,5 +486,17 @@ export default function LibraryView({ songs, role }: Props) {
         )}
       </div>
     </div>
+
+    {overlay && (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fbfaf7', overflowY: 'auto' }}>
+        <SongDetail
+          song={overlay.song}
+          chords={overlay.chords}
+          structureRows={overlay.structureRows}
+          role={role}
+          onBack={closeOverlay}
+        />
+      </div>
+    )}
   )
 }

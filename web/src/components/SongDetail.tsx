@@ -60,6 +60,7 @@ interface Props {
   chords: SongChord[]
   structureRows: SongStructureRow[]
   role: 'editor' | 'viewer'
+  onBack?: () => void
 }
 
 function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
@@ -76,7 +77,7 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
   )
 }
 
-export default function SongDetail({ song, chords, structureRows, role }: Props) {
+export default function SongDetail({ song, chords, structureRows, role, onBack }: Props) {
   const isEditor = role === 'editor'
   const status = STATUS_STYLES[song.status] ?? STATUS_STYLES.demo
 
@@ -247,7 +248,7 @@ export default function SongDetail({ song, chords, structureRows, role }: Props)
 
   const backBtn = (
     <button
-      onClick={() => { window.location.href = '/' }}
+      onClick={() => { onBack ? onBack() : (window.location.href = '/') }}
       onMouseDown={() => setBackActive(true)}
       onMouseUp={() => setBackActive(false)}
       onMouseLeave={() => setBackActive(false)}
