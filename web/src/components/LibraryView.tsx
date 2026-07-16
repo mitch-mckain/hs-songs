@@ -93,19 +93,14 @@ export default function LibraryView({ songs, role }: Props) {
     return () => window.removeEventListener('pageshow', handler)
   }, [])
 
-  // Lock body scroll when overlay is open (prevents iOS overscroll bleed-through)
+  // Lock body scroll when overlay is open
   useEffect(() => {
     if (overlay) {
-      document.body.style.position = 'fixed'
-      document.body.style.width = '100%'
+      document.body.style.overflow = 'hidden'
     } else {
-      document.body.style.position = ''
-      document.body.style.width = ''
+      document.body.style.overflow = ''
     }
-    return () => {
-      document.body.style.position = ''
-      document.body.style.width = ''
-    }
+    return () => { document.body.style.overflow = '' }
   }, [overlay])
 
   async function handleSongClick(song: Song) {
@@ -495,14 +490,16 @@ export default function LibraryView({ songs, role }: Props) {
     </div>
 
     {overlay && (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 10, background: '#fbfaf7', overflowY: 'auto', overscrollBehavior: 'contain' }}>
-        <SongDetail
-          song={overlay.song}
-          chords={overlay.chords}
-          structureRows={overlay.structureRows}
-          role={role}
-          onBack={closeOverlay}
-        />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 10, background: '#fbfaf7', overflow: 'hidden' }}>
+        <div style={{ width: '100%', height: '100%', overflowY: 'auto', overscrollBehavior: 'none' }}>
+          <SongDetail
+            song={overlay.song}
+            chords={overlay.chords}
+            structureRows={overlay.structureRows}
+            role={role}
+            onBack={closeOverlay}
+          />
+        </div>
       </div>
     )}
     </>
