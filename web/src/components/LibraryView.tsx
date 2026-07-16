@@ -241,6 +241,7 @@ export default function LibraryView({ songs, role }: Props) {
   Object.entries(byAlbum).forEach(([album, songs]) => sections.push({ heading: album, songs }))
 
   return (
+    <>
     <div style={{ minHeight: '100vh', background: '#fbfaf7', paddingBottom: 96 }}>
       <div className="lib-container" style={{ maxWidth: 920, margin: '0 auto', padding: '48px 20px 60px' }}>
         {/* Header */}
@@ -498,5 +499,6 @@ export default function LibraryView({ songs, role }: Props) {
         />
       </div>
     )}
+    </>
   )
 }
