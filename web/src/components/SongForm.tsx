@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { getChordShapes, buildDiagramData, type ChordShape } from '@/lib/chords'
 import ChordDiagram from '@/components/ChordDiagram'
 import CustomChordBuilder from '@/components/CustomChordBuilder'
@@ -111,7 +110,6 @@ const sectionHeadingStyle: React.CSSProperties = {
 }
 
 export default function SongForm({ initialSong, initialChords = [], initialStructureRows = [] }: Props) {
-  const router = useRouter()
   const isEdit = !!initialSong
 
   // Details
@@ -259,7 +257,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
         { method: isEdit ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
       )
       const data = await res.json()
-      if (data.id) router.push(`/songs/${data.id}`)
+      if (data.id) window.location.href = `/songs/${data.id}`
     } finally {
       setSaving(false)
     }
@@ -272,7 +270,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <button
-          onClick={() => router.push(cancelTarget)}
+          onClick={() => window.location.href = cancelTarget}
           style={{ width: 36, height: 36, borderRadius: '50%', background: '#ffffff', border: '1px solid #e3e0d8', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, marginBottom: 16 }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#4a4850" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -722,7 +720,7 @@ export default function SongForm({ initialSong, initialChords = [], initialStruc
       <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: '#ffffff', borderTop: '1px solid #e3e0d8', zIndex: 10 }}>
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
         <button
-          onClick={() => router.push(cancelTarget)}
+          onClick={() => window.location.href = cancelTarget}
           style={{ fontFamily: 'inherit', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 8, cursor: 'pointer', background: '#ffffff', color: '#4a4850', border: '1px solid #e3e0d8' }}
         >
           Cancel
