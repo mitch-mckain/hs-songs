@@ -83,6 +83,13 @@ export default function LibraryView({ songs, role }: Props) {
 
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null)
   const [navigatingSongId, setNavigatingSongId] = useState<string | null>(null)
+
+  // Clear navigation state when page is restored from bfcache (back button)
+  useEffect(() => {
+    const handler = (e: PageTransitionEvent) => { if (e.persisted) setNavigatingSongId(null) }
+    window.addEventListener('pageshow', handler)
+    return () => window.removeEventListener('pageshow', handler)
+  }, [])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'demo' | 'released'>('all')
   const [menuOpen, setMenuOpen] = useState(false)
