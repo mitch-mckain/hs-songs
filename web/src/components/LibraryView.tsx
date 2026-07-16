@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { usePlayer } from '@/context/PlayerContext'
 import SongDetail from '@/components/SongDetail'
@@ -82,6 +82,7 @@ export default function LibraryView({ songs, role }: Props) {
   const isEditor = role === 'editor'
   const { play, track, playing, togglePlay, setOnEnded, setOnPrev, queueNextTrack, saveSession } = usePlayer()
 
+  const overlayScrollRef = useRef<HTMLDivElement>(null)
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null)
   const [navigatingSongId, setNavigatingSongId] = useState<string | null>(null)
   const [overlay, setOverlay] = useState<{ song: Song; chords: SongChord[] | null; structureRows: SongStructureRow[] | null } | null>(null)
@@ -491,7 +492,7 @@ export default function LibraryView({ songs, role }: Props) {
 
     {overlay && (
       <div style={{ position: 'fixed', inset: 0, zIndex: 10, background: '#fbfaf7', overflow: 'hidden' }}>
-        <div style={{ width: '100%', height: '100%', overflowY: 'auto', overscrollBehavior: 'none' }}>
+        <div ref={overlayScrollRef} style={{ width: '100%', height: '100%', overflowY: 'auto', overscrollBehavior: 'none' }}>
           {overlay.chords === null ? (
             <div style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}>
               {/* Back button skeleton */}
@@ -517,6 +518,7 @@ export default function LibraryView({ songs, role }: Props) {
               structureRows={overlay.structureRows ?? []}
               role={role}
               onBack={closeOverlay}
+              scrollRef={overlayScrollRef}
             />
           )}
         </div>

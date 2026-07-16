@@ -61,6 +61,7 @@ interface Props {
   structureRows: SongStructureRow[]
   role: 'editor' | 'viewer'
   onBack?: () => void
+  scrollRef?: React.RefObject<HTMLElement | null>
 }
 
 function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
@@ -77,7 +78,7 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
   )
 }
 
-export default function SongDetail({ song, chords, structureRows, role, onBack }: Props) {
+export default function SongDetail({ song, chords, structureRows, role, onBack, scrollRef }: Props) {
   const isEditor = role === 'editor'
   const status = STATUS_STYLES[song.status] ?? STATUS_STYLES.demo
 
@@ -115,10 +116,14 @@ export default function SongDetail({ song, chords, structureRows, role, onBack }
   const [stickyVisible, setStickyVisible] = useState(false)
 
   useEffect(() => {
-    const onScroll = () => setStickyVisible(window.scrollY > 80)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    const el = scrollRef?.current ?? window
+    const onScroll = () => {
+      const scrollTop = scrollRef?.current ? scrollRef.current.scrollTop : window.scrollY
+      setStickyVisible(scrollTop > 80)
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [scrollRef])
 
   useEffect(() => {
     if (!song.drive_folder_url) return
@@ -274,7 +279,7 @@ export default function SongDetail({ song, chords, structureRows, role, onBack }
     {/* Mobile sticky header */}
     <button
       className={`mobile-back-to-top${stickyVisible ? ' visible' : ''}`}
-      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      onClick={() => scrollRef?.current ? scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' }) : window.scrollTo({ top: 0, behavior: 'smooth' })}
       style={{ width: 40, height: 40, borderRadius: '50%', background: '#1a1a1f', border: 'none', cursor: 'pointer', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
