@@ -93,16 +93,8 @@ export default function LibraryView({ songs, role }: Props) {
     return () => window.removeEventListener('pageshow', handler)
   }, [])
 
-  // Close overlay on browser back
-  useEffect(() => {
-    const handler = () => { setOverlay(null) }
-    window.addEventListener('popstate', handler)
-    return () => window.removeEventListener('popstate', handler)
-  }, [])
-
   async function handleSongClick(song: Song) {
     setNavigatingSongId(song.id)
-    history.pushState(null, '', `/songs/${song.id}`)
     const supabase = createClient()
     const [{ data: chords }, { data: rows }] = await Promise.all([
       supabase.from('song_chords').select('*').eq('song_id', song.id).order('sort_order'),
@@ -113,7 +105,6 @@ export default function LibraryView({ songs, role }: Props) {
   }
 
   function closeOverlay() {
-    history.back()
     setOverlay(null)
   }
   const [search, setSearch] = useState('')
