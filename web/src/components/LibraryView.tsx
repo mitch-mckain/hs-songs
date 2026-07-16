@@ -513,8 +513,8 @@ export default function LibraryView({ songs, role }: Props) {
           ) : (
             <SongDetail
               song={overlay.song}
-              chords={overlay.chords}
-              structureRows={overlay.structureRows}
+              chords={overlay.chords ?? []}
+              structureRows={overlay.structureRows ?? []}
               role={role}
               onBack={closeOverlay}
             />
