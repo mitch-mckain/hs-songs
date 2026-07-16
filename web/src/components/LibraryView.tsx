@@ -105,14 +105,19 @@ export default function LibraryView({ songs, role }: Props) {
   }, [overlay])
 
   async function handleSongClick(song: Song) {
+    if (overlay) return // already open, ignore extra taps
     setOverlay({ song, chords: null, structureRows: null })
     setNavigatingSongId(null)
-    const supabase = createClient()
-    const [{ data: chords }, { data: rows }] = await Promise.all([
-      supabase.from('song_chords').select('*').eq('song_id', song.id).order('position'),
-      supabase.from('song_structure_rows').select('*').eq('song_id', song.id).order('position'),
-    ])
-    setOverlay({ song, chords: chords ?? [], structureRows: rows ?? [] })
+    try {
+      const supabase = createClient()
+      const [{ data: chords }, { data: rows }] = await Promise.all([
+        supabase.from('song_chords').select('*').eq('song_id', song.id).order('position'),
+        supabase.from('song_structure_rows').select('*').eq('song_id', song.id).order('position'),
+      ])
+      setOverlay(prev => prev?.song.id === song.id ? { song, chords: chords ?? [], structureRows: rows ?? [] } : prev)
+    } catch {
+      setOverlay(null)
+    }
   }
 
   function closeOverlay() {
