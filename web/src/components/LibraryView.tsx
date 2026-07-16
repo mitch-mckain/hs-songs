@@ -84,7 +84,7 @@ export default function LibraryView({ songs, role }: Props) {
 
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null)
   const [navigatingSongId, setNavigatingSongId] = useState<string | null>(null)
-  const [overlay, setOverlay] = useState<{ song: Song; chords: SongChord[]; structureRows: SongStructureRow[] } | null>(null)
+  const [overlay, setOverlay] = useState<{ song: Song; chords: SongChord[] | null; structureRows: SongStructureRow[] | null } | null>(null)
 
   // Clear navigation state when page is restored from bfcache (back button)
   useEffect(() => {
@@ -104,14 +104,14 @@ export default function LibraryView({ songs, role }: Props) {
   }, [overlay])
 
   async function handleSongClick(song: Song) {
-    setNavigatingSongId(song.id)
+    setOverlay({ song, chords: null, structureRows: null })
+    setNavigatingSongId(null)
     const supabase = createClient()
     const [{ data: chords }, { data: rows }] = await Promise.all([
       supabase.from('song_chords').select('*').eq('song_id', song.id).order('sort_order'),
       supabase.from('song_structure_rows').select('*').eq('song_id', song.id).order('sort_order'),
     ])
     setOverlay({ song, chords: chords ?? [], structureRows: rows ?? [] })
-    setNavigatingSongId(null)
   }
 
   function closeOverlay() {
@@ -492,13 +492,33 @@ export default function LibraryView({ songs, role }: Props) {
     {overlay && (
       <div style={{ position: 'fixed', inset: 0, zIndex: 10, background: '#fbfaf7', overflow: 'hidden' }}>
         <div style={{ width: '100%', height: '100%', overflowY: 'auto', overscrollBehavior: 'none' }}>
-          <SongDetail
-            song={overlay.song}
-            chords={overlay.chords}
-            structureRows={overlay.structureRows}
-            role={role}
-            onBack={closeOverlay}
-          />
+          {overlay.chords === null ? (
+            <div style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}>
+              {/* Back button skeleton */}
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e8e4db', marginBottom: 24, animation: 'skeleton-pulse 1.4s ease-in-out infinite' }} />
+              {/* Title skeleton */}
+              <div style={{ height: 36, width: '55%', borderRadius: 6, background: '#e8e4db', marginBottom: 10, animation: 'skeleton-pulse 1.4s ease-in-out infinite' }} />
+              <div style={{ height: 18, width: '30%', borderRadius: 6, background: '#e8e4db', marginBottom: 32, animation: 'skeleton-pulse 1.4s ease-in-out infinite' }} />
+              {/* Meta row skeleton */}
+              <div style={{ display: 'flex', gap: 12, marginBottom: 32 }}>
+                {[80, 60, 90, 70].map((w, i) => (
+                  <div key={i} style={{ height: 28, width: w, borderRadius: 6, background: '#e8e4db', animation: 'skeleton-pulse 1.4s ease-in-out infinite' }} />
+                ))}
+              </div>
+              {/* Section skeletons */}
+              {[1, 2, 3].map(i => (
+                <div key={i} style={{ marginBottom: 16, borderRadius: 8, background: '#e8e4db', height: 48, animation: 'skeleton-pulse 1.4s ease-in-out infinite' }} />
+              ))}
+            </div>
+          ) : (
+            <SongDetail
+              song={overlay.song}
+              chords={overlay.chords}
+              structureRows={overlay.structureRows}
+              role={role}
+              onBack={closeOverlay}
+            />
+          )}
         </div>
       </div>
     )}
