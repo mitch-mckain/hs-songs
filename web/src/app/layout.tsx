@@ -70,8 +70,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               var s = document.getElementById('app-splash');
               if (s) { s.style.opacity = '0'; setTimeout(function() { if (s.parentNode) s.parentNode.removeChild(s); }, 400); }
             }
-            if (document.readyState === 'complete') { setTimeout(hideSplash, 100); }
-            else { window.addEventListener('load', function() { setTimeout(hideSplash, 100); }); }
+            // Only show splash on first load — skip it on subsequent page navigations
+            if (sessionStorage.getItem('hs_loaded')) {
+              var s = document.getElementById('app-splash');
+              if (s) s.style.display = 'none';
+            } else {
+              sessionStorage.setItem('hs_loaded', '1');
+              if (document.readyState === 'complete') { setTimeout(hideSplash, 100); }
+              else { window.addEventListener('load', function() { setTimeout(hideSplash, 100); }); }
+            }
           })();
         ` }} />
         <AppShell>{children}</AppShell>
