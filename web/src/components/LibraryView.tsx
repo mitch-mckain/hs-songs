@@ -480,7 +480,7 @@ export default function LibraryView({ songs, role }: Props) {
     </div>
 
     {overlay && (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 10, background: '#fbfaf7', overflowY: 'auto' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 10, background: '#fbfaf7', overflowY: 'auto', overscrollBehavior: 'contain' }}>
         <SongDetail
           song={overlay.song}
           chords={overlay.chords}
