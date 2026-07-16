@@ -93,6 +93,21 @@ export default function LibraryView({ songs, role }: Props) {
     return () => window.removeEventListener('pageshow', handler)
   }, [])
 
+  // Lock body scroll when overlay is open (prevents iOS overscroll bleed-through)
+  useEffect(() => {
+    if (overlay) {
+      document.body.style.position = 'fixed'
+      document.body.style.width = '100%'
+    } else {
+      document.body.style.position = ''
+      document.body.style.width = ''
+    }
+    return () => {
+      document.body.style.position = ''
+      document.body.style.width = ''
+    }
+  }, [overlay])
+
   async function handleSongClick(song: Song) {
     setNavigatingSongId(song.id)
     const supabase = createClient()
